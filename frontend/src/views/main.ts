@@ -231,6 +231,7 @@ export class MainView extends View {
         itm.onKeyDown((key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
             if (key === "Delete") {
                 this.removeMessage(message.id);
+                this.messageInput.focus()
             }
         });
         return itm;
