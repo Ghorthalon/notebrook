@@ -1,0 +1,6 @@
+node_modules
+backend/database.db
+backend/db.sqlite
+backend/uploads/
+.DS_Store
+frontend/dist/
