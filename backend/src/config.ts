@@ -1,0 +1,21 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+export const DB_PATH = process.env["DB_PATH"] || "/usr/src/app/data/db.sqlite";
+export const SECRET_KEY = process.env["API_TOKEN"] || "";
+export const UPLOAD_DIR = process.env["UPLOAD_DIR"] || "/usr/src/app/data/uploads/";
+export const FRONTEND_DIR = process.env["FRONTEND_DIR"] || "/usr/src/app/backend/public";
+export const DESCRIBE_IMAGES: boolean = process.env["DESCRIBE_IMAGES"] === "1" ? true : false;
+export const DESCRIBE_IMAGES_API = process.env["DESCRIBE_IMAGES_API"] || "ollama";
+export const DESCRIBE_IMAGES_PROMPT= process.env["DESCRIBE_IMAGES_PROMPT"] || "Describe this image.";
+export const DESCRIBE_IMAGES_TEMPERATURE= parseFloat(process.env["DESCRIBE_IMAGES_TEMPERATURE"]!) || 0.5;
+export const DESCRIBE_IMAGES_MAX_TOKENS= parseInt(process.env["DESCRIBE_IMAGES_MAX_TOKENS"]!) || 1024;
+export const OPENAI_API_KEY= process.env["OPENAI_API_KEY"] || "";
+export const OPENAI_MODEL = process.env["OPENAI_MODEL"] || "gpt-4o";
+export const OLLAMA_URL= process.env["OLLAMA_URL"] || "http://localhost:11434";
+export const OLLAMA_MODEL= process.env["OLLAMA_MODEL"] || "moondream";
+export const PORT = parseInt(process.env["PORT"]!) || 3000;
+export const USE_SSL = process.env["USE_SSL"] === "1" ? true : false;
+export const SSL_KEY = process.env["SSL_KEY"] || "";
+export const SSL_CERT = process.env["SSL_CERT"] || "";
+console.log(process.env);

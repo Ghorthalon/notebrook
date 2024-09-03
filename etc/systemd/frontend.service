@@ -1,0 +1,14 @@
+[Unit]
+Description=frontend Service notebrook
+After=network.target
+
+[Service]
+User=notebrook
+WorkingDirectory=/home/notebrook/frontend
+ExecStart=/usr/bin/npm run dev -- --host
+Restart=always
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

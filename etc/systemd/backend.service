@@ -1,0 +1,14 @@
+[Unit]
+Description=backend Service
+After=network.target
+
+[Service]
+User=notebrook
+WorkingDirectory=/home/notebrook/backend
+ExecStart=/usr/bin/npm start
+Restart=always
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

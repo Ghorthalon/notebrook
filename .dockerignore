@@ -1,0 +1,5 @@
+.env
+backend/.env
+.vscode
+README.md
+node_modules

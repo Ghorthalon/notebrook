@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import * as MessageController from '../controllers/message-controller';
+import { authenticate } from '../middleware/auth';
+
+export const router = Router({mergeParams: true});
+
+router.post('/', authenticate, MessageController.createMessage);
+router.put('/:messageId', authenticate, MessageController.updateMessage);
+router.delete('/:messageId', authenticate, MessageController.deleteMessage);
+router.get('/', authenticate, MessageController.getMessages);
+
