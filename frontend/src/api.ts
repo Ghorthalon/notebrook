@@ -54,6 +54,7 @@ export const API = {
 
     async getMessages(channelId: string) {
         const response = await API.request("GET", `channels/${channelId}/messages`);
+        console.log(response)
         const json = await response.json();
         return json.messages as IMessage[];
     },

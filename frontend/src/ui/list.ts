@@ -44,6 +44,7 @@ export class List extends UINode {
         if (idx === this.focused) {
             if (this.focused > 0) this.focused--;
             this.calculateTabIndex();
+            this.children[this.focused].focus()
         }
         return this;
     }
