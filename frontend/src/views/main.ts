@@ -228,11 +228,13 @@ export class MainView extends View {
         itm.onClick(() => {
             this.openMessageDialog(message);
         })
-        itm.onKeyDown((key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
+        itm.onKeyDown(async(key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
             if (key === "Delete") {
-                this.removeMessage(message.id);
-                if (this.messageList.children.length === 1) {
+                await this.removeMessage(message.id);
+                if (this.messageList.children.length === 0) {
                     this.messageInput.focus()
+                } else {
+                    this.messageList.focusSelectedMessage()
                 }
             }
         });

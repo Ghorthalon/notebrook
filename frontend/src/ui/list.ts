@@ -44,14 +44,13 @@ export class List extends UINode {
         if (idx === this.focused) {
             if (this.focused > 0) this.focused--;
             this.calculateTabIndex();
-            this.children[this.focused].focus()
         }
         return this;
     }
 
     public _onFocus() {
         super._onFocus();
-        this.children[this.focused].focus();
+        this.focusSelectedMessage();
         return this;
     }
 
@@ -75,14 +74,14 @@ export class List extends UINode {
                 this.children[this.focused].setTabbable(false);
                 this.focused = Math.max(0, this.focused - 1);
                 this.children[this.focused].setTabbable(true);
-                this.children[this.focused].focus();
+                this.focusSelectedMessage();
                 return true;
                 break;
             case "ArrowDown":
                 this.children[this.focused].setTabbable(false);
                 this.focused = Math.min(this.children.length - 1, this.focused + 1);
                 this.children[this.focused].setTabbable(true);
-                this.children[this.focused].focus();
+                this.focusSelectedMessage();
                 return true;
                 break;
             case "Enter":
@@ -93,14 +92,14 @@ export class List extends UINode {
                 this.children[this.focused].setTabbable(false);
                 this.focused = 0;
                 this.children[this.focused].setTabbable(true);
-                this.children[this.focused].focus();
+                this.focusSelectedMessage();
                 return true;
                 break;
             case "End":
                 this.children[this.focused].setTabbable(false);
                 this.focused = this.children.length - 1;
                 this.children[this.focused].setTabbable(true);
-                this.children[this.focused].focus();
+                this.focusSelectedMessage();
                 return true;
                 break;
             default:
@@ -168,5 +167,9 @@ export class List extends UINode {
         this.focused = this.children.length - 1;
         this.children[this.focused].setTabbable(true);
         return this;
+    }
+
+    public focusSelectedMessage() {
+        this.children[this.focused].focus()
     }
 }
