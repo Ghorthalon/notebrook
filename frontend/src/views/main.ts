@@ -138,6 +138,11 @@ export class MainView extends View {
 
     private async syncChannels() {
         const channels = await API.getChannels();
+        state.channelList.channels.forEach((chan) => {
+            if (!channels.find((c) => c.id === chan.id)) {
+                state.removeChannel(chan);
+            }
+        });
         channels.forEach((chan) => state.addChannel(new Channel(chan)));
         this.updateChannelList();
         if (!state.currentChannel) {
@@ -180,8 +185,21 @@ export class MainView extends View {
         const channelId = state.currentChannel.id;
         if (channelId) {
             const messages = await API.getMessages(channelId.toString());
-            // only render new list items, or list items that have changed.
+            // first, delete all local messages that are no longer on the remote using the chunk processor
             const proc = new ChunkProcessor<IMessage>(100);
+            proc.processArray(state.currentChannel.messages, (chunk: IMessage[]) => {
+                chunk.forEach((message: IMessage) => {
+                    if (!messages.find((m) => m.id === message.id)) {
+                        state.currentChannel!.removeMessage(message.id);
+                        const elem = this.messageElementMap.get(message.id);
+                        if (elem) {
+                            this.messageList.remove(elem);
+                            this.messageElementMap.delete(message.id);
+                        }
+                    }
+                });
+            });
+            // only render new list items, or list items that have changed.
             proc.processArray(messages, (chunk: IMessage[]) => {
                 chunk.forEach((message: IMessage) => {
                     // TODO: this could do with a lot of perf improvements. I'll get to it once this is an issue.

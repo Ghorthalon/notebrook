@@ -18,4 +18,3 @@ export const PORT = parseInt(process.env["PORT"]!) || 3000;
 export const USE_SSL = process.env["USE_SSL"] === "1" ? true : false;
 export const SSL_KEY = process.env["SSL_KEY"] || "";
 export const SSL_CERT = process.env["SSL_CERT"] || "";
-console.log(process.env);
