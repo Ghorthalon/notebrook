@@ -45,4 +45,9 @@ export class TextInput extends UINode {
         this.inputElement.value = value;
         return this;
     }
+
+    public setReadonly(readonly: boolean) {
+        this.inputElement.readOnly = readonly;
+        return this;
+    }
 }

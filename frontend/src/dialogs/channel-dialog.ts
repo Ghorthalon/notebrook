@@ -9,6 +9,7 @@ import { RemoveDialog } from "./remove-dialog";
 export class ChannelDialog extends Dialog<IChannel | null> {
     private channel: IChannel;
     private nameField: TextInput;
+    private idField: TextInput;
     private makeDefault: Button;
     private mergeButton: Button;
     private deleteButton: Button;
@@ -19,6 +20,11 @@ export class ChannelDialog extends Dialog<IChannel | null> {
         this.nameField = new TextInput("Channel name");
         this.nameField.setPosition(25, 10, 50, 10);
         this.nameField.setValue(channel.name);
+        this.idField = new TextInput("Channel ID (for use with API)");
+        this.idField.setPosition(45, 10, 50, 10);
+        this.idField.setReadonly(true);
+        this.idField.setValue(channel.id.toString());
+
         this.makeDefault = new Button("Make default");
         this.makeDefault.setPosition(20, 70, 10, 10);
         this.makeDefault.onClick(() => {
@@ -39,6 +45,7 @@ export class ChannelDialog extends Dialog<IChannel | null> {
             this.deleteChannel();
         });
         this.add(this.nameField);
+        this.add(this.idField);
         this.add(this.makeDefault);
         this.add(this.mergeButton);
         this.add(this.deleteButton);
