@@ -247,6 +247,11 @@ export class MainView extends View {
             this.openMessageDialog(message);
         })
         itm.onKeyDown(async(key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
+            if (key === "c") {
+                navigator.clipboard.writeText(message.content.trim());
+                playSound("copy");
+            }
+
             if (key === "Delete") {
                 await this.removeMessage(message.id);
                 if (this.messageList.children.length === 0) {

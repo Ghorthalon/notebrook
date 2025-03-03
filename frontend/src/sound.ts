@@ -3,6 +3,7 @@ const audioContext = new AudioContext();
 const soundFiles = {
     intro: 'intro.wav',
     login: 'login.wav',
+    copy: 'copy.wav',
     uploadFailed: 'uploadfail.wav'
 } as const;
 
