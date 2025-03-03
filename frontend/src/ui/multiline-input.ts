@@ -12,6 +12,9 @@ export class MultilineInput extends UINode {
         this.titleElement.id = `txtarea_title_${this.id}`;
         this.textareaElement = document.createElement("textarea");
         this.textareaElement.id = `txtarea_${this.id}`;
+        this.textareaElement.style.whiteSpace = 'pre'; // Prevent text wrapping and preserve 
+        this.textareaElement.style.overflow = 'auto';  // Enable scrolling if content overflows
+        
         this.titleElement.appendChild(this.textareaElement);
         this.element.appendChild(this.titleElement);
     }
