@@ -246,23 +246,7 @@ export class MainView extends View {
         itm.onClick(() => {
             this.openMessageDialog(message);
         })
-        itm.onKeyDown(async(key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
-            if ((key.match(/[1-9]/) || key === '0') && alt) {
-                if (key === '0') key = '10';
-                const index = parseInt(key);
-                const messages = state.currentChannel?.messages;
-                if (messages && messages.length > 0) {
-                    const msg = messages[messages.length - index];
-                    if (msg) {
-                        showToast(`${msg.content}; ${this.convertIsoTimeStringToFriendly(msg.createdAt)}`);
-                    } else {
-                        showToast('No message is available in this position');
-                    }
-                } else {
-                    showToast('There are no messages in this channel right now')
-                }
-            }
-
+        itm.onKeyDown(async (key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
             if (key === "c") {
                 navigator.clipboard.writeText(message.content.trim());
                 playSound("copy");
@@ -630,6 +614,24 @@ export class MainView extends View {
     }
 
     private handleHotkey(e: KeyboardEvent) {
+        let index = 10;
+        if ((e.key.match(/[1-9]/) || e.key === '0') && e.altKey) {
+            e.preventDefault();
+            if (e.key === '0') index = 10;
+            index = parseInt(e.key);
+            const messages = state.currentChannel?.messages;
+            if (messages && messages.length > 0) {
+                const msg = messages[messages.length - index];
+                if (msg) {
+                    showToast(`${msg.content}; ${this.convertIsoTimeStringToFriendly(msg.createdAt)}`);
+                } else {
+                    showToast('No message is available in this position');
+                }
+            } else {
+                showToast('There are no messages in this channel right now')
+            }
+        }
+
         if (e.ctrlKey && e.shiftKey) {
             const action = this.hotkeyMap.get(e.key.toLowerCase());
             if (action) {
