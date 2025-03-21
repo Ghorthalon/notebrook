@@ -247,6 +247,22 @@ export class MainView extends View {
             this.openMessageDialog(message);
         })
         itm.onKeyDown(async(key: string, alt: boolean | undefined, shift: boolean | undefined, ctrl: boolean | undefined) => {
+            if ((key.match(/[1-9]/) || key === '0') && alt) {
+                if (key === '0') key = '10';
+                const index = parseInt(key);
+                const messages = state.currentChannel?.messages;
+                if (messages && messages.length > 0) {
+                    const msg = messages[messages.length - index];
+                    if (msg) {
+                        showToast(`${msg.content}; ${this.convertIsoTimeStringToFriendly(msg.createdAt)}`);
+                    } else {
+                        showToast('No message is available in this position');
+                    }
+                } else {
+                    showToast('There are no messages in this channel right now')
+                }
+            }
+
             if (key === "c") {
                 navigator.clipboard.writeText(message.content.trim());
                 playSound("copy");
