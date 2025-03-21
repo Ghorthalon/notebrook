@@ -623,12 +623,12 @@ export class MainView extends View {
             if (messages && messages.length > 0) {
                 const msg = messages[messages.length - index];
                 if (msg) {
-                    showToast(`${msg.content}; ${this.convertIsoTimeStringToFriendly(msg.createdAt)}`);
+                    showToast(`${msg.content}; ${this.convertIsoTimeStringToFriendly(msg.createdAt)}`, 200);
                 } else {
-                    showToast('No message is available in this position');
+                    showToast('No message is available in this position', 200);
                 }
             } else {
-                showToast('There are no messages in this channel right now')
+                showToast('There are no messages in this channel right now', 200)
             }
         }
 
