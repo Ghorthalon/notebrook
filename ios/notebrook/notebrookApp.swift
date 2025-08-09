@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 var dataManager = DataManager()
 
 @main
@@ -14,5 +15,6 @@ struct notebrookApp: App {
         WindowGroup {
             ContentView(dataManager: dataManager)
         }
+        .modelContainer(for: [Channel.self, Message.self, OutboxItem.self])
     }
 }

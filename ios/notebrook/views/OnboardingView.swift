@@ -7,6 +7,14 @@ struct Onboarding: View {
 
     private let NOTEBROOK_URL = "https://github.com/ogomez92/notebrook"
 
+    init(dataManager: DataManager) {
+        self._dataManager = State(initialValue: dataManager)
+        let vm = ViewModel()
+        vm.serverUrl = dataManager.getServer()
+        vm.serverToken = dataManager.getToken()
+        self._viewModel = State(initialValue: vm)
+    }
+
     var body: some View {
         VStack {
             Text("Welcome to Notebrook")

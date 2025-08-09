@@ -12,7 +12,8 @@ extension Onboarding {
 
         func checkServerDetails() async throws {
             do {
-                let _ = try await NotebrookService.checkTokenValidity(serverUrl: serverUrl, serverToken: serverToken)
+                let ok = try await NotebrookService.checkTokenValidity(serverUrl: serverUrl, serverToken: serverToken)
+                if !ok { throw ApplicationError.InvalidResponse }
             } catch {
                 throw ApplicationError.InvalidResponse
             }
