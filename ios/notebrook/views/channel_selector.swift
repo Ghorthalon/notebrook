@@ -3,7 +3,6 @@ import SwiftData
 
 struct ChannelSelector: View {
     @State var dataManager: DataManager
-    @State private var viewModel = ViewModel()
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Channel.name)]) private var storedChannels: [Channel]
     @State private var showAuthAlert = false
@@ -45,17 +44,8 @@ struct ChannelSelector: View {
             guard !dataManager.getServer().isEmpty, !dataManager.getToken().isEmpty else { return }
 
             do {
-                let remote = try await viewModel.getChannelList()
-                // Save/update in SwiftData
-                for ch in remote {
-                    // upsert based on id
-                    if let existing = storedChannels.first(where: { $0.id == ch.id }) {
-                        existing.name = ch.name
-                    } else {
-                        modelContext.insert(Channel(name: ch.name, id: ch.id))
-                    }
-                }
-                try? modelContext.save()
+                let cache = CacheActor(modelContainer: modelContext.container)
+                try await cache.refreshChannels()
             } catch {
                 showAuthAlert = true
             }

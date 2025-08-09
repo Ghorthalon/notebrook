@@ -66,7 +66,13 @@ struct MessagesView: View {
         .navigationTitle(channel.name)
         .task { await syncMessages() }
         .onChange(of: network.isOnline) { _, isOnline in
-            if isOnline { Task { await OutboxProcessor.shared.processOutbox(using: modelContext) } }
+            if isOnline {
+                Task {
+                    let outbox = OutboxActor(modelContainer: modelContext.container)
+                    await outbox.process()
+                    await syncMessages()
+                }
+            }
         }
     }
 
@@ -106,16 +112,18 @@ struct MessagesView: View {
             if NetworkMonitor.shared.isOnline {
                 do {
                     let sent = try await NotebrookService.sendMessage(channelId: channel.id, content: local.content)
-                    local.serverId = sent.serverId
-                    local.createdAt = sent.createdAt
-                    local.isPending = false
+                    await MainActor.run {
+                        local.serverId = sent.serverId
+                        local.createdAt = sent.createdAt
+                        local.isPending = false
+                    }
                 } catch {
-                    enqueueSend(for: local)
+                    await MainActor.run { enqueueSend(for: local) }
                 }
             } else {
-                enqueueSend(for: local)
+                await MainActor.run { enqueueSend(for: local) }
             }
-            try? modelContext.save()
+            await MainActor.run { try? modelContext.save() }
         }
     }
 
@@ -129,14 +137,14 @@ struct MessagesView: View {
             if let serverId = message.serverId, NetworkMonitor.shared.isOnline {
                 do {
                     try await NotebrookService.deleteMessage(channelId: message.channelId, serverMessageId: serverId)
-                    modelContext.delete(message)
+                    await MainActor.run { modelContext.delete(message) }
                 } catch {
-                    enqueueDelete(for: message)
+                    await MainActor.run { enqueueDelete(for: message) }
                 }
             } else {
-                enqueueDelete(for: message)
+                await MainActor.run { enqueueDelete(for: message) }
             }
-            try? modelContext.save()
+            await MainActor.run { try? modelContext.save() }
         }
     }
 
