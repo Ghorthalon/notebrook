@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 var dataManager = DataManager()
+var soundManager = SoundManager()
 
 @main
 struct notebrookApp: App {
