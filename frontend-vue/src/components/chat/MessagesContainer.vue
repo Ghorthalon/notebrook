@@ -1,0 +1,250 @@
+<template>
+  <div 
+    class="messages-container" 
+    ref="containerRef"
+    @keydown="handleKeydown"
+    tabindex="0"
+    role="list"
+    :aria-label="messagesAriaLabel"
+    :aria-description="navigationHint"
+  >
+    <div class="messages" role="presentation">
+      <!-- Regular Messages -->
+      <MessageItem
+        v-for="(message, index) in messages"
+        :key="message.id"
+        :message="message"
+        :tabindex="index === focusedMessageIndex ? 0 : -1"
+        :data-message-index="index"
+        @focus="focusedMessageIndex = index"
+      />
+      
+      <!-- Unsent Messages -->
+      <MessageItem
+        v-for="(unsentMsg, index) in unsentMessages"
+        :key="unsentMsg.id"
+        :message="unsentMsg"
+        :is-unsent="true"
+        :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
+        :data-message-index="messages.length + index"
+        @focus="focusedMessageIndex = messages.length + index"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import MessageItem from './MessageItem.vue'
+import type { ExtendedMessage, UnsentMessage } from '@/types'
+
+interface Props {
+  messages: ExtendedMessage[]
+  unsentMessages: UnsentMessage[]
+}
+
+const emit = defineEmits<{
+  'message-selected': [message: ExtendedMessage | UnsentMessage, index: number]
+}>()
+
+const props = defineProps<Props>()
+
+const containerRef = ref<HTMLElement>()
+const focusedMessageIndex = ref(0)
+
+// Combined messages array for easier navigation
+const allMessages = computed(() => [...props.messages, ...props.unsentMessages])
+const totalMessages = computed(() => allMessages.value.length)
+
+// ARIA labels for screen readers
+const messagesAriaLabel = computed(() => {
+  const total = totalMessages.value
+  const current = focusedMessageIndex.value + 1
+  
+  if (total === 0) {
+    return 'Messages list, no messages'
+  } else if (total === 1) {
+    return 'Messages list, 1 message'
+  } else {
+    return `Messages list, ${total} messages, currently focused on message ${current} of ${total}`
+  }
+})
+
+const navigationHint = 'Use arrow keys to navigate, Page Up/Down to jump 10 messages, Home/End for first/last, Enter to select'
+
+// Keyboard navigation
+const handleKeydown = (event: KeyboardEvent) => {
+  if (totalMessages.value === 0) return
+  
+  let newIndex = focusedMessageIndex.value
+  
+  switch (event.key) {
+    case 'ArrowUp':
+      event.preventDefault()
+      newIndex = Math.max(0, focusedMessageIndex.value - 1)
+      break
+      
+    case 'ArrowDown':
+      event.preventDefault()
+      newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 1)
+      break
+      
+    case 'PageUp':
+      event.preventDefault()
+      newIndex = Math.max(0, focusedMessageIndex.value - 10)
+      break
+      
+    case 'PageDown':
+      event.preventDefault()
+      newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 10)
+      break
+      
+    case 'Home':
+      event.preventDefault()
+      newIndex = 0
+      break
+      
+    case 'End':
+      event.preventDefault()
+      newIndex = totalMessages.value - 1
+      break
+      
+    case 'Enter':
+    case ' ':
+      event.preventDefault()
+      selectCurrentMessage()
+      return
+      
+    default:
+      return
+  }
+  
+  if (newIndex !== focusedMessageIndex.value) {
+    focusMessage(newIndex)
+  }
+}
+
+const focusMessage = (index: number) => {
+  focusedMessageIndex.value = index
+  nextTick(() => {
+    const messageElement = containerRef.value?.querySelector(`[data-message-index="${index}"]`) as HTMLElement
+    if (messageElement) {
+      messageElement.focus()
+      messageElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  })
+}
+
+const selectCurrentMessage = () => {
+  const currentMessage = allMessages.value[focusedMessageIndex.value]
+  if (currentMessage) {
+    emit('message-selected', currentMessage, focusedMessageIndex.value)
+  }
+}
+
+// Method to focus a specific message (for external use, like search results)
+const focusMessageById = (messageId: string | number) => {
+  const index = allMessages.value.findIndex(msg => msg.id === messageId)
+  if (index !== -1) {
+    focusMessage(index)
+  }
+}
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (containerRef.value) {
+      containerRef.value.scrollTop = containerRef.value.scrollHeight
+    }
+  })
+}
+
+// Watch for new messages and auto-scroll
+watch(() => [props.messages.length, props.unsentMessages.length], () => {
+  // When new messages arrive, focus the last message and scroll to bottom
+  if (totalMessages.value > 0) {
+    focusedMessageIndex.value = totalMessages.value - 1
+  }
+  scrollToBottom()
+})
+
+// Reset focus when messages change significantly
+watch(() => totalMessages.value, (newTotal) => {
+  if (focusedMessageIndex.value >= newTotal) {
+    focusedMessageIndex.value = Math.max(0, newTotal - 1)
+  }
+})
+
+onMounted(() => {
+  scrollToBottom()
+  // Focus the last message on mount
+  if (totalMessages.value > 0) {
+    focusedMessageIndex.value = totalMessages.value - 1
+  }
+})
+
+defineExpose({
+  scrollToBottom,
+  focusMessageById
+})
+</script>
+
+<style scoped>
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.messages-container:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Scrollbar styling */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .messages-container {
+    background: #111827;
+  }
+  
+  .messages-container:focus {
+    outline-color: #60a5fa;
+  }
+  
+  .messages-container::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+  
+  .messages-container::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+  
+  .messages-container::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+}
+</style>
