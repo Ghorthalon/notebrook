@@ -4,3 +4,4 @@ backend/db.sqlite
 backend/uploads/
 .DS_Store
 frontend/dist/
+frontend-vue/dist
