@@ -4,21 +4,21 @@ WORKDIR /usr/src/app
 FROM base AS install
 
 COPY backend/package.json backend/package-lock.json /temp/dev/backend/
-COPY frontend/package.json frontend/package-lock.json /temp/dev/frontend/
+COPY frontend-vue/package.json frontend-vue/package-lock.json /temp/dev/frontend/
 
 RUN cd /temp/dev/backend && npm install
 RUN cd /temp/dev/frontend && npm install
 
 RUN mkdir -p /temp/prod/backend /temp/prod/frontend
 COPY backend/package.json backend/package-lock.json /temp/prod/backend/
-COPY frontend/package.json frontend/package-lock.json /temp/prod/frontend/
+COPY frontend-vue/package.json frontend-vue/package-lock.json /temp/prod/frontend/
 
 RUN cd /temp/prod/backend && npm install --production
 RUN cd /temp/prod/frontend && npm install --production
 
 FROM install AS build-frontend
 WORKDIR /usr/src/app/frontend
-COPY frontend/ .
+COPY frontend-vue/ .
 COPY --from=install /temp/dev/frontend/node_modules node_modules
 RUN npm run build
 
