@@ -112,7 +112,7 @@ export const useAppStore = defineStore('app', () => {
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     settings.value = { ...settings.value, ...newSettings }
-    await set('app_settings', settings.value)
+    await set('app_settings', JSON.parse(JSON.stringify(settings.value)))
   }
 
   const loadState = async () => {

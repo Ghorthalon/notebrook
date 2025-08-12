@@ -18,6 +18,7 @@
         :current-channel-id="currentChannelId"
         :unread-counts="unreadCounts"
         @select-channel="$emit('select-channel', $event)"
+        @channel-info="$emit('channel-info', $event)"
       />
     </div>
     
@@ -50,6 +51,7 @@ defineProps<Props>()
 defineEmits<{
   'create-channel': []
   'select-channel': [channelId: number]
+  'channel-info': [channel: Channel]
   'settings': []
 }>()
 </script>

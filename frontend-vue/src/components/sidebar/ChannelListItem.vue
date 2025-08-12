@@ -43,6 +43,7 @@ defineProps<Props>()
 
 defineEmits<{
   select: [channelId: number]
+  info: [channel: Channel]
 }>()
 </script>
 
@@ -50,6 +51,12 @@ defineEmits<{
 .channel-item {
   list-style: none;
   margin: 0;
+}
+
+.channel-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .channel-button {
@@ -117,6 +124,35 @@ defineEmits<{
   color: #3b82f6;
 }
 
+.channel-info-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.channel-info-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.channel-info-button:focus {
+  outline: none;
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  opacity: 1;
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .channel-button {
@@ -141,6 +177,15 @@ defineEmits<{
   
   .channel-item--active .channel-button:hover {
     background: #2563eb;
+  }
+  
+  .channel-info-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .channel-info-button:focus {
+    background: rgba(96, 165, 250, 0.1);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
   }
 }
 </style>

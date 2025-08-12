@@ -7,6 +7,7 @@
       :unread-counts="unreadCounts"
       @create-channel="showChannelDialog = true"
       @select-channel="selectChannel"
+      @channel-info="handleChannelInfo"
       @settings="showSettings = true"
     />
     
@@ -80,6 +81,14 @@
         @sent="handleCameraSent"
       />
     </BaseDialog>
+
+    <BaseDialog v-model:show="showChannelInfoDialog" title="Channel Settings">
+      <ChannelInfoDialog 
+        v-if="selectedChannelForInfo"
+        :channel="selectedChannelForInfo"
+        @close="showChannelInfoDialog = false" 
+      />
+    </BaseDialog>
   </div>
 </template>
 
@@ -108,9 +117,10 @@ import SearchDialog from '@/components/dialogs/SearchDialog.vue'
 import FileUploadDialog from '@/components/dialogs/FileUploadDialog.vue'
 import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue'
 import CameraCaptureDialog from '@/components/dialogs/CameraCaptureDialog.vue'
+import ChannelInfoDialog from '@/components/dialogs/ChannelInfoDialog.vue'
 
 // Types
-import type { ExtendedMessage } from '@/types'
+import type { ExtendedMessage, Channel } from '@/types'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -130,11 +140,15 @@ const messageInput = ref()
 
 // Dialog states
 const showChannelDialog = ref(false)
+const showChannelInfoDialog = ref(false)
 const showSettings = ref(false)
 const showSearchDialog = ref(false)
 const showFileDialog = ref(false)
 const showVoiceDialog = ref(false)
 const showCameraDialog = ref(false)
+
+// Channel info state
+const selectedChannelForInfo = ref<Channel | null>(null)
 
 // Mock unread counts (implement real logic later)
 const unreadCounts = ref<Record<number, number>>({})
@@ -360,6 +374,11 @@ const scrollToBottom = () => {
 const handleChannelCreated = async (channelId: number) => {
   showChannelDialog.value = false
   await selectChannel(channelId)
+}
+
+const handleChannelInfo = (channel: Channel) => {
+  selectedChannelForInfo.value = channel
+  showChannelInfoDialog.value = true
 }
 
 const isUnsentMessage = (messageId: string | number): boolean => {

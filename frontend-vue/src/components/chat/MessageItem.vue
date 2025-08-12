@@ -152,126 +152,77 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 <style scoped>
 .message {
-  padding: 0.75rem 1rem;
-  border: 1px solid transparent;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
-  margin-bottom: 0.5rem;
-  transition: all 0.2s ease;
+  padding: 12px 16px;
+  margin-bottom: 8px;
 }
 
-.message:hover,
-.message:focus {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: #e5e7eb;
-  outline: none;
+.message:hover {
+  background: #f1f3f4;
 }
 
 .message:focus {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-  border-color: #3b82f6;
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
 }
 
 .message--unsent {
-  opacity: 0.7;
-  background: #fef3c7;
-  border-color: #fbbf24;
+  background: #fff3e0;
+  border-color: #ff9800;
 }
 
 .message--highlighted {
-  background: #dbeafe;
-  border-color: #3b82f6;
-  animation: highlight-fade 2s ease-out;
-}
-
-@keyframes highlight-fade {
-  0% {
-    background: #bfdbfe;
-    border-color: #2563eb;
-  }
-  100% {
-    background: #dbeafe;
-    border-color: #3b82f6;
-  }
+  background: #e3f2fd;
+  border-color: #2196f3;
 }
 
 .message__content {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #111827;
-  margin-bottom: 0.5rem;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  color: #212529;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
 .message__files {
-  margin: 0.5rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  margin: 8px 0;
 }
 
 .message__meta {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .message__time {
-  font-size: 0.75rem;
-  color: #6b7280;
+  color: #6c757d;
+  font-size: 12px;
 }
 
 .message__status {
-  font-size: 0.75rem;
-  color: #f59e0b;
+  color: #ff9800;
+  font-size: 12px;
   font-weight: 500;
 }
 
-/* Dark mode */
 @media (prefers-color-scheme: dark) {
-  .message:hover,
-  .message:focus {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: #374151;
+  .message {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
   }
   
-  .message:focus {
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
-  }
-  
-  .message--unsent {
-    background: #451a03;
-    border-color: #92400e;
-  }
-  
-  .message--highlighted {
-    background: #1e3a8a;
-    border-color: #60a5fa;
-  }
-  
-  @keyframes highlight-fade {
-    0% {
-      background: #1e40af;
-      border-color: #3b82f6;
-    }
-    100% {
-      background: #1e3a8a;
-      border-color: #60a5fa;
-    }
+  .message:hover {
+    background: #374151;
   }
   
   .message__content {
-    color: rgba(255, 255, 255, 0.87);
+    color: #e2e8f0;
   }
   
   .message__time {
-    color: rgba(255, 255, 255, 0.6);
-  }
-  
-  .message__status {
-    color: #fbbf24;
+    color: #a0aec0;
   }
 }
 </style>

@@ -8,6 +8,7 @@
         :is-active="channel.id === currentChannelId"
         :unread-count="unreadCounts[channel.id]"
         @select="$emit('select-channel', $event)"
+        @info="$emit('channel-info', $event)"
       />
     </ul>
   </div>
@@ -27,6 +28,7 @@ defineProps<Props>()
 
 defineEmits<{
   'select-channel': [channelId: number]
+  'channel-info': [channel: Channel]
 }>()
 </script>
 
