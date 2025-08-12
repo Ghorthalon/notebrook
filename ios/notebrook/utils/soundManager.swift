@@ -72,6 +72,7 @@ class SoundItem {
 }
 
 class SoundManager {
+    static let shared = SoundManager()
     var oneShotSounds: [SoundItem] = []
     var sounds: [SoundItem] = []
 

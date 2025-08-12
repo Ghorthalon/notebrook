@@ -9,6 +9,7 @@ struct MessagesView: View {
     @State private var draft: String = ""
     @State private var syncing = false
     @StateObject private var network = NetworkMonitor.shared
+    private let sound = SoundManager.shared
 
     init(channel: Channel) {
         self.channel = channel
@@ -104,6 +105,8 @@ struct MessagesView: View {
     private func sendDraft() {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        // Play "enter" sound when user presses send
+        _ = sound.playOnce("enter_message")
         let local = Message(serverId: nil, channelId: channel.id, content: trimmed, createdAt: Date(), isPending: true)
         modelContext.insert(local)
         draft = ""
@@ -116,6 +119,8 @@ struct MessagesView: View {
                         local.serverId = sent.serverId
                         local.createdAt = sent.createdAt
                         local.isPending = false
+                        // Play a random "sent" confirmation when the server acknowledges
+                        _ = sound.playOnce("sent\(Int.random(in: 1...6))")
                     }
                 } catch {
                     await MainActor.run { enqueueSend(for: local) }

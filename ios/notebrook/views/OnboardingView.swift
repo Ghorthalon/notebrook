@@ -41,6 +41,8 @@ struct Onboarding: View {
                             dataManager.saveServerDetails(viewModel.serverUrl, viewModel.serverToken)
                             dataManager.showOnboardingView = false
                             print("done")
+                            // Play login sound on successful configuration
+                            _ = SoundManager.shared.playOnce("login")
                         }
                     } catch ApplicationError.InvalidResponse {
                         viewModel.serverConfigurationError = true

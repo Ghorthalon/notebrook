@@ -19,6 +19,8 @@ actor OutboxActor {
                             msg.isPending = false
                             modelContext.delete(item)
                             try modelContext.save()
+                            // Play a sent confirmation when an outbox send succeeds
+                            await MainActor.run { _ = SoundManager.shared.playOnce("sent\(Int.random(in: 1...6))") }
                         } catch {
                             // keep in outbox on error
                         }
@@ -46,4 +48,3 @@ actor OutboxActor {
         } catch { }
     }
 }
-
