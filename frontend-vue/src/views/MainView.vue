@@ -1,12 +1,39 @@
 <template>
   <div class="main-view">
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <button 
+        class="mobile-menu-button"
+        @click="sidebarOpen = !sidebarOpen"
+        :aria-label="sidebarOpen ? 'Close menu' : 'Open menu'"
+      >
+        <Icon name="menu" />
+      </button>
+      <h1 class="mobile-title">{{ appStore.currentChannel?.name || 'Notebrook' }}</h1>
+      <button 
+        class="mobile-search-button"
+        @click="showSearchDialog = true"
+        aria-label="Search messages"
+      >
+        <Icon name="search" />
+      </button>
+    </header>
+
+    <!-- Sidebar Overlay -->
+    <div 
+      v-if="sidebarOpen" 
+      class="sidebar-overlay"
+      @click="sidebarOpen = false"
+    ></div>
+    
     <!-- Sidebar -->
     <Sidebar
+      :class="{ 'sidebar-open': sidebarOpen }"
       :channels="appStore.channels"
       :current-channel-id="appStore.currentChannelId"
       :unread-counts="unreadCounts"
       @create-channel="showChannelDialog = true"
-      @select-channel="selectChannel"
+      @select-channel="(id) => { selectChannel(id); sidebarOpen = false }"
       @channel-info="handleChannelInfo"
       @settings="showSettings = true"
     />
@@ -14,8 +41,9 @@
     <!-- Main Content -->
     <main class="main-content">
       <div v-if="appStore.currentChannel" class="chat-container">
-        <!-- Chat Header -->
+        <!-- Chat Header (Desktop only) -->
         <ChatHeader
+          class="desktop-header"
           :channel-name="appStore.currentChannel.name"
           @search="showSearchDialog = true"
         />
@@ -107,6 +135,7 @@ import { syncService } from '@/services/sync'
 
 // Components
 import BaseDialog from '@/components/base/BaseDialog.vue'
+import Icon from '@/components/base/Icon.vue'
 import Sidebar from '@/components/sidebar/Sidebar.vue'
 import ChatHeader from '@/components/chat/ChatHeader.vue'
 import MessagesContainer from '@/components/chat/MessagesContainer.vue'
@@ -146,6 +175,9 @@ const showSearchDialog = ref(false)
 const showFileDialog = ref(false)
 const showVoiceDialog = ref(false)
 const showCameraDialog = ref(false)
+
+// Mobile sidebar state
+const sidebarOpen = ref(false)
 
 // Channel info state
 const selectedChannelForInfo = ref<Channel | null>(null)
@@ -475,10 +507,112 @@ onMounted(async () => {
   }
 }
 
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-menu-button,
+.mobile-search-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.mobile-menu-button:hover,
+.mobile-search-button:hover {
+  color: #374151;
+}
+
+.mobile-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .main-view {
     flex-direction: column;
+    height: 100vh;
+  }
+  
+  .mobile-header {
+    display: flex;
+    flex-shrink: 0;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 300;
+  }
+  
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    display: block;
+  }
+  
+  .main-content {
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .chat-container {
+    height: 100%;
+  }
+  
+  .desktop-header {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .mobile-header {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+  
+  .mobile-title {
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .mobile-menu-button,
+  .mobile-search-button {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .mobile-menu-button:hover,
+  .mobile-search-button:hover {
+    color: rgba(255, 255, 255, 0.87);
   }
 }
 </style>

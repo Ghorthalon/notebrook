@@ -186,7 +186,21 @@ const sendVoiceMessage = async () => {
     })
 
     // Upload voice file
-    await apiService.uploadFile(appStore.currentChannelId!, message.id, file)
+    const uploadedFile = await apiService.uploadFile(appStore.currentChannelId!, message.id, file)
+    
+    // Immediately update the local message with file metadata
+    const updatedMessage = {
+      ...message,
+      fileId: uploadedFile.id,
+      filePath: uploadedFile.file_path,
+      fileType: uploadedFile.file_type,
+      fileSize: uploadedFile.file_size,
+      originalName: uploadedFile.original_name,
+      fileCreatedAt: uploadedFile.created_at
+    }
+    
+    // Update the message in the store
+    appStore.updateMessage(message.id, updatedMessage)
     
     toastStore.success('Voice message sent!')
     clearRecording()

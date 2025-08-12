@@ -40,7 +40,7 @@ export class SyncService {
       })
       
       // Add/update with server messages (server wins for conflicts)
-      serverMessages.forEach(msg => {
+      serverMessages.forEach((msg: any) => {
         // Transform server message format to match our types
         const transformedMsg: ExtendedMessage = {
           id: msg.id,

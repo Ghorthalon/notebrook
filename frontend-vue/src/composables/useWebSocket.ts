@@ -19,7 +19,14 @@ export function useWebSocket() {
       channel_id: parseInt(data.channelId), // Convert channelId string to channel_id number
       content: data.content,
       created_at: data.createdAt || new Date().toISOString(),
-      file_id: data.fileId
+      file_id: data.fileId,
+      // Handle flattened file fields
+      fileId: data.fileId,
+      filePath: data.filePath,
+      fileType: data.fileType,
+      fileSize: data.fileSize,
+      originalName: data.originalName,
+      fileCreatedAt: data.fileCreatedAt
     }
     console.log('WebSocket: Transformed message:', message)
     console.log('Transformed content:', JSON.stringify(message.content))
@@ -32,26 +39,41 @@ export function useWebSocket() {
     }
   }
 
-  const handleMessageUpdated = (data: { id: string, content: string }) => {
-    appStore.updateMessage(parseInt(data.id), { content: data.content })
+  const handleMessageUpdated = (data: any) => {
+    // Handle full message updates including file metadata
+    const messageUpdate: Partial<ExtendedMessage> = {
+      content: data.content
+    }
+    
+    // Handle flattened file fields from server
+    if (data.fileId) {
+      messageUpdate.fileId = data.fileId
+      messageUpdate.filePath = data.filePath
+      messageUpdate.fileType = data.fileType
+      messageUpdate.fileSize = data.fileSize
+      messageUpdate.originalName = data.originalName
+      messageUpdate.fileCreatedAt = data.fileCreatedAt
+    }
+    
+    appStore.updateMessage(parseInt(data.id), messageUpdate)
   }
 
   const handleMessageDeleted = (data: { id: string }) => {
     appStore.removeMessage(parseInt(data.id))
   }
 
-  const handleFileUploaded = (data: FileAttachment) => {
-    // Find the message and add the file to it
-    const channelMessages = appStore.messages[data.channel_id] || []
-    const messageIndex = channelMessages.findIndex(m => m.id === data.message_id)
-    if (messageIndex !== -1) {
-      const message = channelMessages[messageIndex]
-      const updatedMessage = {
-        ...message,
-        files: [...(message.files || []), data]
-      }
-      appStore.updateMessage(message.id, updatedMessage)
+  const handleFileUploaded = (data: any) => {
+    // Handle file upload events with flattened format
+    const messageUpdate: Partial<ExtendedMessage> = {
+      fileId: data.fileId,
+      filePath: data.filePath, 
+      fileType: data.fileType,
+      fileSize: data.fileSize,
+      originalName: data.originalName,
+      fileCreatedAt: data.fileCreatedAt
     }
+    
+    appStore.updateMessage(data.message_id, messageUpdate)
   }
 
   const handleChannelCreated = (data: { channel: Channel }) => {

@@ -139,25 +139,44 @@ const uploadFiles = async () => {
   error.value = ''
   
   try {
-    // Create a message first to attach files to
-    const message = await apiService.createMessage(appStore.currentChannelId, 
-      `Uploaded ${selectedFiles.value.length} file${selectedFiles.value.length === 1 ? '' : 's'}`)
-    
-    // Upload each file
-    for (let i = 0; i < selectedFiles.value.length; i++) {
-      const file = selectedFiles.value[i]
+    // For single file, use the filename as message content
+    // For multiple files, show count
+    const messageContent = selectedFiles.value.length === 1 
+      ? selectedFiles.value[0].name 
+      : `Uploaded ${selectedFiles.value.length} files`
       
-      try {
-        await apiService.uploadFile(appStore.currentChannelId, message.id, file)
-        uploadProgress.value[i] = 100
-      } catch (fileError) {
-        console.error(`Failed to upload ${file.name}:`, fileError)
-        toastStore.error(`Failed to upload ${file.name}`)
-        uploadProgress.value[i] = 0
+    // Create a message first to attach files to
+    const message = await apiService.createMessage(appStore.currentChannelId, messageContent)
+    
+    // Upload the first file (backend uses single file per message)
+    const file = selectedFiles.value[0]
+    
+    try {
+      const uploadedFile = await apiService.uploadFile(appStore.currentChannelId, message.id, file)
+      uploadProgress.value[0] = 100
+      
+      // Immediately update the local message with file metadata
+      const updatedMessage = {
+        ...message,
+        fileId: uploadedFile.id,
+        filePath: uploadedFile.file_path,
+        fileType: uploadedFile.file_type,
+        fileSize: uploadedFile.file_size,
+        originalName: uploadedFile.original_name,
+        fileCreatedAt: uploadedFile.created_at
       }
+      
+      // Update the message in the store
+      appStore.updateMessage(message.id, updatedMessage)
+      
+      toastStore.success('File uploaded successfully!')
+      
+    } catch (fileError) {
+      console.error(`Failed to upload ${file.name}:`, fileError)
+      toastStore.error(`Failed to upload ${file.name}`)
+      uploadProgress.value[0] = 0
     }
     
-    toastStore.success('Files uploaded successfully!')
     emit('uploaded')
     
   } catch (err) {
