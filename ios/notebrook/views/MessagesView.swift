@@ -1,15 +1,22 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
+import Speech
 
 struct MessagesView: View {
     let channel: Channel
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query private var messages: [Message]
     @State private var draft: String = ""
     @State private var syncing = false
     @StateObject private var network = NetworkMonitor.shared
     private let sound = SoundManager.shared
+    // @StateObject private var speech = SpeechManager()
+    @State private var showDeleteChannelAlert = false
+    @State private var showSpeechPermissionAlert = false
+    @Environment(\.horizontalSizeClass) private var hSizeClass
 
     init(channel: Channel) {
         self.channel = channel
@@ -55,12 +62,34 @@ struct MessagesView: View {
                 TextField("Message", text: $draft, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityLabel("Message input")
-                Button(action: sendDraft) {
-                    Image(systemName: "paperplane.fill")
-                        .imageScale(.large)
+                if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    /* Voice record button when draft is empty
+                    ZStack {
+                        Circle()
+                            .fill(speech.isRecording ? Color.red.opacity(0.9) : Color.blue.opacity(0.9))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
+                            .foregroundColor(.white)
+                            .imageScale(.small)
+                    }
+                    .accessibilityLabel("Voice Message")
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { _ in
+                                if !speech.isRecording { Task { await startVoice() } }
+                            }
+                            .onEnded { _ in
+                                stopVoice()
+                            }
+                    )*/
+                } else {
+                    Button(action: sendDraft) {
+                        Image(systemName: "paperplane.fill")
+                            .imageScale(.large)
+                    }
+                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel("Send")
                 }
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel("Send")
             }
             .padding(.all, 8)
         }
@@ -75,6 +104,67 @@ struct MessagesView: View {
                 }
             }
         }
+        .alert("Speech Permission Needed", isPresented: $showSpeechPermissionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Enable microphone and speech recognition in Settings to use voice input.")
+        }
+        .alert("Delete Channel?", isPresented: $showDeleteChannelAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) { Task { await deleteCurrentChannel() } }
+        } message: {
+            Text("This removes the channel and its messages.")
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                // Status indicator: pill with system colors and text, compact-aware
+                let isCompact = (hSizeClass == .compact)
+                Group {
+                    if !network.isOnline {
+                        statusPill(color: .red, text: isCompact ? "Off" : "Offline")
+                            .accessibilityLabel("Sync Status: Offline")
+                    } else if messages.contains(where: { $0.isPending }) {
+                        statusPill(color: .yellow, text: isCompact ? "Pend" : "Pending")
+                            .accessibilityLabel("Sync Status: Pending messages")
+                    } else {
+                        statusPill(color: .green, text: isCompact ? "Syn" : "Synced")
+                            .accessibilityLabel("Sync Status: All messages synced")
+                    }
+                }
+                Menu {
+                    Button {
+                        dataManager.setDefaultChannelId(channel.id)
+                    } label: {
+                        Label("Make Default", systemImage: "star")
+                    }
+                    Button(role: .destructive) {
+                        showDeleteChannelAlert = true
+                    } label: {
+                        Label("Delete Channel", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .accessibilityLabel("More Options")
+                }
+            }
+        }
+    }
+
+    // Reusable pill view for status indicator
+    @ViewBuilder
+    private func statusPill(color: Color, text: String) -> some View {
+        let isCompact = (hSizeClass == .compact)
+        HStack(spacing: isCompact ? 4 : 6) {
+            Image(systemName: "circle.fill").foregroundStyle(color)
+            Text(text)
+        }
+        .font(isCompact ? .caption2 : .caption)
+        .padding(.horizontal, isCompact ? 6 : 8)
+        .padding(.vertical, isCompact ? 2 : 4)
+        .background(.thinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
     }
 
     @MainActor
@@ -105,11 +195,17 @@ struct MessagesView: View {
     private func sendDraft() {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        send(content: trimmed) {
+            draft = ""
+        }
+    }
+
+    private func send(content: String, after: @escaping () -> Void = {}) {
         // Play "enter" sound when user presses send
         _ = sound.playOnce("enter_message")
-        let local = Message(serverId: nil, channelId: channel.id, content: trimmed, createdAt: Date(), isPending: true)
+        let local = Message(serverId: nil, channelId: channel.id, content: content, createdAt: Date(), isPending: true)
         modelContext.insert(local)
-        draft = ""
+        after()
         // Try to send immediately if online; otherwise enqueue
         Task {
             if NetworkMonitor.shared.isOnline {
@@ -158,5 +254,46 @@ struct MessagesView: View {
         modelContext.insert(item)
         // For immediate feedback in offline, mark pending; we will actually delete once processed
         message.isPending = true
+    }
+
+    // Voice recording helpers
+    private func startVoice() async {
+        /*let ok = await speech.requestAuthorization()
+        guard ok else { showSpeechPermissionAlert = true; return }
+        do {
+            try speech.startRecording { transcript in
+                if let text = transcript, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    send(content: text)
+                }
+            }
+        } catch {
+            showSpeechPermissionAlert = true
+        }
+         */
+    }
+
+    private func stopVoice() {
+        /*
+        speech.stopRecording()
+         */
+    }
+
+    private func deleteCurrentChannel() async {
+        // Try remote deletion if online; ignore errors
+        if NetworkMonitor.shared.isOnline {
+            try? await NotebrookService.deleteChannel(channelId: channel.id)
+        }
+        // Remove local messages and channel
+        do {
+            // Capture id as value to avoid keyPath-to-keyPath predicate
+            let cid = channel.id
+            let pred = #Predicate<Message> { $0.channelId == cid }
+            let desc = FetchDescriptor<Message>(predicate: pred)
+            let toDelete = try modelContext.fetch(desc)
+            for m in toDelete { modelContext.delete(m) }
+            modelContext.delete(channel)
+            try? modelContext.save()
+        } catch { }
+        dismiss()
     }
 }

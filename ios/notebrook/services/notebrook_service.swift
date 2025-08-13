@@ -102,4 +102,17 @@ print("validated")
             throw ApplicationError.InvalidResponse
         }
     }
+
+    static func deleteChannel(channelId: Int) async throws {
+        let base = dataManager.getServer()
+        let token = dataManager.getToken()
+        guard let url = URL(string: base + "/channels/\(channelId)/") else { throw ApplicationError.InvalidUrl }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.setValue(token, forHTTPHeaderField: "authorization")
+        let (_, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+            throw ApplicationError.InvalidResponse
+        }
+    }
 }

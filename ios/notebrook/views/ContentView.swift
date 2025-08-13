@@ -23,12 +23,6 @@ struct ContentView: View {
             }
         }
         .navigationTitle("Notebrook")
-        .toolbar {
-            Button("More Options", action: {
-                // TODO present a sheet to forget the server, etc
-            })
-        }
-
         .task {
             let server = dataManager.getServer()
             let token = dataManager.getToken()

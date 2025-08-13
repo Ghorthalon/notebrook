@@ -31,4 +31,22 @@ class DataManager {
         UserDefaults.standard.removeObject(forKey: "token")
         showOnboardingView =  true
     }
+
+    // Default channel management
+    func setDefaultChannelId(_ id: Int?) {
+        if let id {
+            UserDefaults.standard.set(id, forKey: "default_channel_id")
+        } else {
+            UserDefaults.standard.removeObject(forKey: "default_channel_id")
+        }
+    }
+
+    func getDefaultChannelId() -> Int? {
+        let id = UserDefaults.standard.object(forKey: "default_channel_id") as? Int
+        return id
+    }
+
+    func clearDefaultChannelId() {
+        UserDefaults.standard.removeObject(forKey: "default_channel_id")
+    }
 }
