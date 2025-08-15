@@ -26,33 +26,55 @@ struct MessagesView: View {
         _messages = Query(filter: predicate, sort: [SortDescriptor(\Message.createdAt, order: .forward)])
     }
 
+    // Token reflecting the latest visible state to trigger scrolls
+    private var bottomChangeToken: String {
+        guard let last = messages.last else { return "" }
+        let ts = last.createdAt.timeIntervalSince1970
+        let pending = last.isPending ? 1 : 0
+        let sid = last.serverId ?? -1
+        return "\(ts)-\(pending)-\(sid)"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            List {
-                ForEach(messages) { message in
-                    Text(message.content)
-                        .accessibilityLabel("Message: \(message.content)")
-                        .accessibilityHint(message.isPending ? "Pending send" : "")
-                        .accessibilityAction(named: Text("Copy")) {
-                            UIPasteboard.general.string = message.content
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) { delete(message) } label: {
-                                Label("Delete", systemImage: "trash")
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(messages) { message in
+                        Text(message.content)
+                            .accessibilityLabel("Message: \(message.content)")
+                            .accessibilityHint(message.isPending ? "Pending send" : "")
+                            .accessibilityAction(named: Text("Copy")) {
+                                UIPasteboard.general.string = message.content
                             }
-                        }
-                        .accessibilityAction(named: Text("Delete")) { delete(message) }
-                        .contextMenu {
-                            Button(role: .destructive) { delete(message) } label: {
-                                Label("Delete", systemImage: "trash")
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) { delete(message) } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
-                            Button { UIPasteboard.general.string = message.content } label: {
-                                Label("Copy", systemImage: "doc.on.doc")
+                            .accessibilityAction(named: Text("Delete")) { delete(message) }
+                            .contextMenu {
+                                Button(role: .destructive) { delete(message) } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button { UIPasteboard.general.string = message.content } label: {
+                                    Label("Copy", systemImage: "doc.on.doc")
+                                }
                             }
-                        }
-                        .overlay(alignment: .trailing) {
-                            if message.isPending { ProgressView().controlSize(.mini) }
-                        }
+                            .overlay(alignment: .trailing) {
+                                if message.isPending { ProgressView().controlSize(.mini) }
+                            }
+                    }
+                    // Invisible anchor to scroll to bottom reliably
+                    Color.clear.frame(height: 1).id("__bottom__")
+                }
+                .onAppear {
+                    withAnimation { proxy.scrollTo("__bottom__", anchor: .bottom) }
+                }
+                .onChange(of: messages.count) { _ in
+                    withAnimation { proxy.scrollTo("__bottom__", anchor: .bottom) }
+                }
+                .onChange(of: bottomChangeToken) { _ in
+                    withAnimation { proxy.scrollTo("__bottom__", anchor: .bottom) }
                 }
             }
             .accessibilityIdentifier("messagesList")

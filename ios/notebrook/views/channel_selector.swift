@@ -9,6 +9,8 @@ struct ChannelSelector: View {
     @State private var showForgetAlert = false
     // Value-based navigation (iOS 16+)
     @State private var navPath = NavigationPath()
+    // Prevent repeated auto-navigation to default
+    @State private var didAutoNavigateToDefault = false
 
     init(dataManager: DataManager) {
         self._dataManager = State(initialValue: dataManager)
@@ -63,9 +65,12 @@ struct ChannelSelector: View {
             }
         }
         .task(id: storedChannels.map { $0.id }) {
-            if let defId = dataManager.getDefaultChannelId(),
+            // Auto-navigate to default channel only once per view lifetime
+            if !didAutoNavigateToDefault,
+               navPath.isEmpty,
+               let defId = dataManager.getDefaultChannelId(),
                storedChannels.contains(where: { $0.id == defId }) {
-                // Navigate programmatically to default channel
+                didAutoNavigateToDefault = true
                 navPath = NavigationPath()
                 navPath.append(defId)
             }

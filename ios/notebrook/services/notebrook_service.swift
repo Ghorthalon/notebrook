@@ -79,7 +79,7 @@ print("validated")
         let body = ["content": content]
         req.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         let (data, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw ApplicationError.InvalidResponse
         }
         let decoder = JSONDecoder()
@@ -98,7 +98,7 @@ print("validated")
         req.httpMethod = "DELETE"
         req.setValue(token, forHTTPHeaderField: "authorization")
         let (_, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw ApplicationError.InvalidResponse
         }
     }
@@ -111,7 +111,7 @@ print("validated")
         req.httpMethod = "DELETE"
         req.setValue(token, forHTTPHeaderField: "authorization")
         let (_, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else {
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw ApplicationError.InvalidResponse
         }
     }
