@@ -9,6 +9,11 @@ class ApiService {
     console.log('API service token set:', token ? `${token.substring(0, 10)}...` : 'null')
   }
 
+  setBaseUrl(url: string) {
+    this.baseUrl = url
+    console.log('API service base URL set:', url)
+  }
+
   private getHeaders(): HeadersInit {
     return {
       'Authorization': this.token,

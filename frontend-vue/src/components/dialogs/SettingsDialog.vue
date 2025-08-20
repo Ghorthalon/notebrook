@@ -145,6 +145,37 @@
         </div>
       </div>
       
+      <div class="setting-group">
+        <h3>Account</h3>
+        
+        <div class="setting-item">
+          <label>Current Server</label>
+          <div class="server-info">
+            {{ currentServerUrl || 'Default' }}
+          </div>
+        </div>
+        
+        <div class="setting-actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="handleLogout"
+            :disabled="isSaving"
+          >
+            Logout
+          </BaseButton>
+          
+          <BaseButton
+            type="button"
+            variant="danger"
+            @click="showResetConfirm = true"
+            :disabled="isSaving"
+          >
+            Reset All Data
+          </BaseButton>
+        </div>
+      </div>
+      
       <div class="form-actions">
         <BaseButton
           type="button"
@@ -161,14 +192,42 @@
         </BaseButton>
       </div>
     </form>
+    
+    <!-- Reset Data Confirmation Dialog -->
+    <div v-if="showResetConfirm" class="confirm-overlay">
+      <div class="confirm-dialog">
+        <h3>Reset All Data</h3>
+        <p>This will permanently delete all local data including messages, settings, and authentication. This cannot be undone.</p>
+        <div class="confirm-actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="showResetConfirm = false"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            type="button"
+            variant="danger"
+            @click="handleResetData"
+            :loading="isResetting"
+          >
+            Reset All Data
+          </BaseButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useAudio } from '@/composables/useAudio'
+import { clear } from 'idb-keyval'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { AppSettings } from '@/types'
 
@@ -176,12 +235,19 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const router = useRouter()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { availableVoices, speak, setVoice } = useAudio()
 
 const isSaving = ref(false)
+const isResetting = ref(false)
+const showResetConfirm = ref(false)
 const selectedVoiceURI = ref('')
+
+// Computed property for current server URL
+const currentServerUrl = computed(() => authStore.serverUrl)
 const localSettings = reactive<AppSettings>({
   soundEnabled: true,
   speechEnabled: true,
@@ -226,6 +292,43 @@ const handleSave = async () => {
     toastStore.error('Failed to save settings')
   } finally {
     isSaving.value = false
+  }
+}
+
+const handleLogout = async () => {
+  try {
+    await authStore.clearAuth()
+    toastStore.success('Logged out successfully')
+    emit('close')
+    router.push('/auth')
+  } catch (error) {
+    console.error('Logout failed:', error)
+    toastStore.error('Logout failed')
+  }
+}
+
+const handleResetData = async () => {
+  isResetting.value = true
+  
+  try {
+    // Clear all IndexedDB data
+    await clear()
+    
+    // Clear stores
+    await authStore.clearAuth()
+    appStore.$reset()
+    
+    toastStore.success('All data has been reset')
+    showResetConfirm.value = false
+    emit('close')
+    
+    // Redirect to auth page
+    router.push('/auth')
+  } catch (error) {
+    console.error('Reset failed:', error)
+    toastStore.error('Failed to reset data')
+  } finally {
+    isResetting.value = false
   }
 }
 
@@ -340,6 +443,63 @@ onMounted(() => {
   border-top: 1px solid #e5e7eb;
 }
 
+.server-info {
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #374151;
+  word-break: break-all;
+}
+
+.setting-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 400px;
+  margin: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.confirm-dialog h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.confirm-dialog p {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .setting-group h3 {
@@ -359,6 +519,26 @@ onMounted(() => {
   
   .form-actions {
     border-top-color: #374151;
+  }
+  
+  .server-info {
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .confirm-overlay {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .confirm-dialog {
+    background: #1f2937;
+  }
+  
+  .confirm-dialog h3 {
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .confirm-dialog p {
+    color: rgba(255, 255, 255, 0.6);
   }
 }
 </style>

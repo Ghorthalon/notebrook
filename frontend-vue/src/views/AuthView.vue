@@ -8,6 +8,14 @@
       
       <form @submit.prevent="handleAuth" class="auth-form">
         <BaseInput
+          v-model="serverUrl"
+          type="url"
+          label="Server URL (optional)"
+          :placeholder="defaultServerUrl"
+          :disabled="isLoading"
+        />
+        
+        <BaseInput
           v-model="token"
           type="password"
           label="Authentication Token"
@@ -47,9 +55,13 @@ const toastStore = useToastStore()
 const { playSound } = useAudio()
 
 const token = ref('')
+const serverUrl = ref('')
 const error = ref('')
 const isLoading = ref(false)
 const tokenInput = ref()
+
+// Get default server URL for placeholder
+const defaultServerUrl = authStore.getDefaultServerUrl()
 
 const handleAuth = async () => {
   if (!token.value.trim()) return
@@ -58,18 +70,20 @@ const handleAuth = async () => {
   error.value = ''
   
   try {
-    const success = await authStore.authenticate(token.value.trim())
+    // Use custom server URL if provided, otherwise use default
+    const customUrl = serverUrl.value.trim() || undefined
+    const success = await authStore.authenticate(token.value.trim(), customUrl)
     
     if (success) {
       await playSound('login')
       toastStore.success('Authentication successful!')
       router.push('/')
     } else {
-      error.value = 'Invalid authentication token'
+      error.value = 'Invalid authentication token or server URL'
       tokenInput.value?.focus()
     }
   } catch (err) {
-    error.value = 'Authentication failed. Please try again.'
+    error.value = 'Authentication failed. Please check your token and server URL.'
     console.error('Auth error:', err)
   } finally {
     isLoading.value = false

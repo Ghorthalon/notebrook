@@ -158,9 +158,12 @@ const toastStore = useToastStore()
 const { sendMessage: sendMessageOffline } = useOfflineSync()
 const { playWater, playSent, playSound, speak, stopSpeaking, isSpeaking } = useAudio()
 
-// Set up services - ensure token is properly set
+// Set up services - ensure token and URL are properly set
 if (authStore.token) {
   apiService.setToken(authStore.token)
+}
+if (authStore.serverUrl) {
+  apiService.setBaseUrl(authStore.serverUrl)
 }
 
 // Refs

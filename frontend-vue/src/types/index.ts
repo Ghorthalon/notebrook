@@ -84,6 +84,7 @@ export interface AppSettings {
   selectedVoiceURI: string | null
   defaultChannelId: number | null
   theme: 'light' | 'dark' | 'auto'
+  serverUrl?: string | null
 }
 
 // Audio Types

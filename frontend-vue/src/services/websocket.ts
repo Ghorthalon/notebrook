@@ -6,20 +6,35 @@ class WebSocketService {
   private maxReconnectAttempts = 5
   private reconnectInterval = 1000
   private eventHandlers: Map<string, ((data: any) => void)[]> = new Map()
+  private customServerUrl: string | null = null
+
+  setServerUrl(url: string) {
+    this.customServerUrl = url
+  }
 
   connect() {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return
     }
 
-    // In development, connect to backend server (port 3000)
-    // In production, use same host as frontend
-    const isDev = import.meta.env.DEV
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = isDev ? 'localhost:3000' : window.location.host
-    const wsUrl = `${protocol}//${host}`
+    // Determine WebSocket URL
+    let wsUrl: string
+    
+    if (this.customServerUrl) {
+      // Use custom server URL
+      const url = new URL(this.customServerUrl)
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsUrl = `${protocol}//${url.host}`
+    } else {
+      // Use default behavior
+      const isDev = import.meta.env.DEV
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = isDev ? 'localhost:3000' : window.location.host
+      wsUrl = `${protocol}//${host}`
+    }
 
     try {
+      console.log('Connecting to WebSocket:', wsUrl)
       this.ws = new WebSocket(wsUrl)
       this.setupEventListeners()
     } catch (error) {

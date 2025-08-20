@@ -1,12 +1,14 @@
 import { onMounted, onUnmounted } from 'vue'
 import { websocketService } from '@/services/websocket'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useAudio } from '@/composables/useAudio'
 import type { Channel, ExtendedMessage, FileAttachment } from '@/types'
 
 export function useWebSocket() {
   const appStore = useAppStore()
+  const authStore = useAuthStore()
   const toastStore = useToastStore()
   const { announceMessage } = useAudio()
 
@@ -157,6 +159,11 @@ export function useWebSocket() {
   }
 
   onMounted(() => {
+    // Set custom server URL if available
+    if (authStore.serverUrl) {
+      websocketService.setServerUrl(authStore.serverUrl)
+    }
+    
     setupEventHandlers()
     websocketService.connect()
   })
