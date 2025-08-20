@@ -280,9 +280,13 @@ const sendPhoto = async () => {
     // Upload photo
     const uploadedFile = await apiService.uploadFile(appStore.currentChannelId!, message.id, file)
     
-    // Immediately update the local message with file metadata
-    const updatedMessage = {
-      ...message,
+    // Create complete message with file metadata
+    const completeMessage = {
+      id: message.id,
+      channel_id: appStore.currentChannelId!,
+      content: message.content,
+      created_at: message.created_at,
+      file_id: uploadedFile.id,
       fileId: uploadedFile.id,
       filePath: uploadedFile.file_path,
       fileType: uploadedFile.file_type,
@@ -291,8 +295,8 @@ const sendPhoto = async () => {
       fileCreatedAt: uploadedFile.created_at
     }
     
-    // Update the message in the store
-    appStore.updateMessage(message.id, updatedMessage)
+    // Add the complete message to the store (this will trigger immediate UI update)
+    appStore.addMessage(completeMessage)
     
     toastStore.success('Photo sent!')
     emit('sent')

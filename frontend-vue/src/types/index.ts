@@ -72,6 +72,14 @@ export interface UnsentMessage {
   content: string
   timestamp: number
   retries: number
+  // File message support (for future offline retry capability)
+  messageType?: 'text' | 'voice' | 'image'
+  fileData?: {
+    blob: Blob
+    fileName: string
+    fileType: string
+    fileSize: number
+  }
 }
 
 export interface AppSettings {

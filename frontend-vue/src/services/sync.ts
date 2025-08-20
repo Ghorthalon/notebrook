@@ -77,7 +77,7 @@ export class SyncService {
   }
 
   /**
-   * Attempt to send all unsent messages
+   * Attempt to send all unsent messages (text and file messages)
    */
   async retryUnsentMessages(): Promise<void> {
     const appStore = this.getAppStore()
@@ -86,28 +86,68 @@ export class SyncService {
     
     for (const unsentMsg of [...unsentMessages]) {
       try {
-        console.log(`Sending unsent message: ${unsentMsg.content}`)
+        console.log(`Sending unsent ${unsentMsg.messageType || 'text'} message: ${unsentMsg.content}`)
         
-        // Try to send the message
-        const response = await apiService.createMessage(unsentMsg.channelId, unsentMsg.content)
-        console.log(`Successfully sent unsent message, got ID: ${response.id}`)
-        
-        // Create the sent message
-        const sentMessage: ExtendedMessage = {
-          id: response.id,
-          channel_id: unsentMsg.channelId,
-          content: unsentMsg.content,
-          created_at: new Date().toISOString()
+        if (unsentMsg.messageType === 'voice' || unsentMsg.messageType === 'image') {
+          // Handle file message retry
+          if (!unsentMsg.fileData) {
+            console.error(`File message ${unsentMsg.id} missing file data, removing`)
+            appStore.removeUnsentMessage(unsentMsg.id)
+            continue
+          }
+          
+          // Create message and upload file
+          const response = await apiService.createMessage(unsentMsg.channelId, unsentMsg.content)
+          
+          // Create file from stored blob data
+          const file = new File([unsentMsg.fileData.blob], unsentMsg.fileData.fileName, {
+            type: unsentMsg.fileData.fileType
+          })
+          
+          // Upload file
+          const uploadedFile = await apiService.uploadFile(unsentMsg.channelId, response.id, file)
+          
+          // Create complete message with file metadata
+          const sentMessage: ExtendedMessage = {
+            id: response.id,
+            channel_id: unsentMsg.channelId,
+            content: unsentMsg.content,
+            created_at: response.created_at,
+            file_id: uploadedFile.id,
+            fileId: uploadedFile.id,
+            filePath: uploadedFile.file_path,
+            fileType: uploadedFile.file_type,
+            fileSize: uploadedFile.file_size,
+            originalName: uploadedFile.original_name,
+            fileCreatedAt: uploadedFile.created_at
+          }
+          
+          appStore.addMessage(sentMessage)
+          console.log(`Successfully sent unsent ${unsentMsg.messageType} message, got ID: ${response.id}`)
+          
+        } else {
+          // Handle text message retry (existing logic)
+          const response = await apiService.createMessage(unsentMsg.channelId, unsentMsg.content)
+          console.log(`Successfully sent unsent text message, got ID: ${response.id}`)
+          
+          // Create the sent message
+          const sentMessage: ExtendedMessage = {
+            id: response.id,
+            channel_id: unsentMsg.channelId,
+            content: unsentMsg.content,
+            created_at: new Date().toISOString()
+          }
+          
+          appStore.addMessage(sentMessage)
         }
         
-        // Add to messages and remove from unsent
-        appStore.addMessage(sentMessage)
+        // Remove from unsent messages
         appStore.removeUnsentMessage(unsentMsg.id)
         
         // Save state immediately after successful send to ensure UI updates
         await appStore.saveState()
         
-        console.log(`Moved unsent message ${unsentMsg.id} to sent messages with ID ${response.id}`)
+        console.log(`Moved unsent message ${unsentMsg.id} to sent messages`)
         console.log(`Unsent messages remaining: ${appStore.unsentMessages.length}`)
         
       } catch (error) {
@@ -192,6 +232,65 @@ export class SyncService {
         content: content,
         timestamp: Date.now(),
         retries: 0
+      }
+      
+      const appStore = this.getAppStore()
+      appStore.addUnsentMessage(unsentMessage)
+      await appStore.saveState()
+      
+      throw error // Re-throw so caller knows it failed
+    }
+  }
+
+  /**
+   * Send a file message with optimistic updates and offline support
+   */
+  async sendFileMessage(channelId: number, content: string, file: File, messageType: 'voice' | 'image' = 'image'): Promise<void> {
+    try {
+      console.log(`Optimistically sending ${messageType} message: ${content}`)
+      
+      // Try to send immediately
+      const message = await apiService.createMessage(channelId, content)
+      
+      // Upload file
+      const uploadedFile = await apiService.uploadFile(channelId, message.id, file)
+      
+      // Success - create complete message with file metadata
+      const completeMessage: ExtendedMessage = {
+        id: message.id,
+        channel_id: channelId,
+        content: content,
+        created_at: message.created_at,
+        file_id: uploadedFile.id,
+        fileId: uploadedFile.id,
+        filePath: uploadedFile.file_path,
+        fileType: uploadedFile.file_type,
+        fileSize: uploadedFile.file_size,
+        originalName: uploadedFile.original_name,
+        fileCreatedAt: uploadedFile.created_at
+      }
+      
+      const appStore = this.getAppStore()
+      appStore.addMessage(completeMessage)
+      console.log(`${messageType} message sent successfully with ID: ${message.id}`)
+      
+    } catch (error) {
+      console.warn(`Failed to send ${messageType} message immediately, queuing for later:`, error)
+      
+      // Queue file message for retry when back online
+      const unsentMessage: UnsentMessage = {
+        id: `unsent_${messageType}_${Date.now()}_${Math.random()}`,
+        channelId: channelId,
+        content: content,
+        timestamp: Date.now(),
+        retries: 0,
+        messageType: messageType,
+        fileData: {
+          blob: file,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        }
       }
       
       const appStore = this.getAppStore()
