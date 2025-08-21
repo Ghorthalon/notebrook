@@ -8,7 +8,6 @@
         @keydown.esc="handleClose"
         role="dialog"
         :aria-labelledby="titleId"
-        :aria-describedby="contentId"
         aria-modal="true"
       >
         <div

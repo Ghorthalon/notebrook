@@ -6,7 +6,6 @@
     tabindex="0"
     role="list"
     :aria-label="messagesAriaLabel"
-    :aria-description="navigationHint"
   >
     <div class="messages" role="presentation">
       <!-- Regular Messages -->
