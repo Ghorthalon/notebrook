@@ -20,8 +20,12 @@
     </div>
     
     <div class="message__meta">
-      <time v-if="!isUnsent && 'created_at' in message" class="message__time">
-        {{ formatTime(message.created_at) }}
+      <time 
+        v-if="!isUnsent && 'created_at' in message" 
+        class="message__time"
+        :datetime="message.created_at"
+      >
+        {{ formatSmartTimestamp(message.created_at) }}
       </time>
       <span v-else class="message__status">Sending...</span>
     </div>
@@ -33,6 +37,7 @@ import { computed } from 'vue'
 import { useAudio } from '@/composables/useAudio'
 import { useToastStore } from '@/stores/toast'
 import { useAppStore } from '@/stores/app'
+import { formatSmartTimestamp, formatTimestampForScreenReader } from '@/utils/time'
 import FileAttachment from './FileAttachment.vue'
 import type { ExtendedMessage, UnsentMessage, FileAttachment as FileAttachmentType } from '@/types'
 
@@ -61,21 +66,30 @@ const hasFileAttachment = computed(() => {
 const fileAttachment = computed((): FileAttachmentType | null => {
   if (!hasFileAttachment.value || !('fileId' in props.message)) return null
   
+  // Check if we have the minimum required file metadata
+  if (!props.message.filePath || !props.message.originalName) {
+    console.warn('File attachment missing metadata:', {
+      fileId: props.message.fileId,
+      filePath: props.message.filePath,
+      originalName: props.message.originalName,
+      fileType: props.message.fileType
+    })
+    return null
+  }
+  
   return {
     id: props.message.fileId!,
     channel_id: props.message.channel_id,
     message_id: props.message.id,
     file_path: props.message.filePath!,
-    file_type: props.message.fileType!,
-    file_size: props.message.fileSize!,
+    file_type: props.message.fileType || 'application/octet-stream',
+    file_size: props.message.fileSize || 0,
     original_name: props.message.originalName!,
     created_at: props.message.fileCreatedAt || props.message.created_at
   }
 })
 
-const formatTime = (timestamp: string): string => {
-  return new Date(timestamp).toLocaleTimeString()
-}
+// formatTime function removed - now using formatSmartTimestamp from utils
 
 // Create comprehensive aria-label for screen readers
 const messageAriaLabel = computed(() => {
@@ -95,8 +109,8 @@ const messageAriaLabel = computed(() => {
   
   // Add timestamp
   if ('created_at' in props.message && props.message.created_at) {
-    const time = formatTime(props.message.created_at)
-    label += `. Sent at ${time}`
+    const time = formatTimestampForScreenReader(props.message.created_at)
+    label += `. Sent ${time}`
   }
   
   // Add status for unsent messages

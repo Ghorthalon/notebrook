@@ -58,7 +58,7 @@
             {{ result.content }}
           </div>
           <div class="result-time">
-            {{ formatTime(result.created_at) }}
+            {{ formatSmartTimestamp(result.created_at) }}
           </div>
         </div>
       </div>
@@ -79,6 +79,7 @@ import { ref, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useToastStore } from '@/stores/toast'
 import { apiService } from '@/services/api'
+import { formatSmartTimestamp } from '@/utils/time'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { Message, ExtendedMessage } from '@/types'
@@ -140,16 +141,7 @@ const getChannelName = (channelId: number): string => {
   return channel?.name || `Channel ${channelId}`
 }
 
-const formatTime = (timestamp: string): string => {
-  if (!timestamp) return 'Unknown time'
-  
-  const date = new Date(timestamp)
-  if (isNaN(date.getTime())) {
-    return 'Invalid date'
-  }
-  
-  return date.toLocaleString()
-}
+// formatTime function removed - now using formatSmartTimestamp from utils
 
 onMounted(() => {
   searchInput.value?.focus()

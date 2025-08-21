@@ -130,6 +130,7 @@ import { useOfflineSync } from '@/composables/useOfflineSync'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useAudio } from '@/composables/useAudio'
+import { formatTimestampForScreenReader } from '@/utils/time'
 import { apiService } from '@/services/api'
 import { syncService } from '@/services/sync'
 
@@ -364,9 +365,7 @@ const handleSelectMessage = async (message: ExtendedMessage) => {
   }
 }
 
-const formatTime = (timestamp: string): string => {
-  return new Date(timestamp).toLocaleTimeString()
-}
+// formatTime function removed - now using formatTimestampForScreenReader from utils
 
 const handleVoiceSent = () => {
   // Voice message was sent successfully
@@ -396,8 +395,8 @@ const announceLastMessage = (position: number) => {
   }
   
   const message = messages[messageIndex]
-  const timeStr = formatTime(message.created_at)
-  const announcement = `${message.content}; ${timeStr}`
+  const timeStr = formatTimestampForScreenReader(message.created_at)
+  const announcement = `${message.content}; sent ${timeStr}`
   
   toastStore.info(announcement)
   

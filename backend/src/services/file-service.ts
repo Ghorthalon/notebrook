@@ -11,11 +11,16 @@ export const uploadFile = async (channelId: string, messageId: string, filePath:
     const result2 = updateQuery.run({ fileId: fileId, messageId: messageId });
 
     events.emit('file-uploaded', result.lastInsertRowid, channelId, messageId, filePath, fileType, fileSize, originalName);
-    return result2; ''
+    return result;
 }
 
 export const getFiles = async (messageId: string) => {
-    const query = db.prepare(`SELECT * FROM files WHERE messageId = $messageId`);
+    // Get the file linked to this message via the fileId in the messages table
+    const query = db.prepare(`
+        SELECT files.* FROM files 
+        JOIN messages ON messages.fileId = files.id 
+        WHERE messages.id = $messageId
+    `);
     const rows = query.all({ messageId: messageId });
     return rows;
 }

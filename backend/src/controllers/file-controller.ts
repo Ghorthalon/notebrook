@@ -18,7 +18,16 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const result = await FileService.uploadFile(channelId, messageId, filePath, fileType!, fileSize!, originalName!);
     logger.info(`File ${originalName} uploaded to message ${messageId} as ${filePath}`);
-    res.json({ id: result.lastInsertRowid, channelId, messageId, filePath, fileType });
+    res.json({ 
+        id: result.lastInsertRowid,
+        channel_id: parseInt(channelId),
+        message_id: parseInt(messageId),
+        file_path: filePath,
+        file_type: fileType,
+        file_size: fileSize,
+        original_name: originalName,
+        created_at: new Date().toISOString()
+    });
 }
 
 

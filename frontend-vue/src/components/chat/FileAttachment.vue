@@ -34,6 +34,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const fileExtension = computed(() => {
+  if (!props.file.original_name) return ''
   return props.file.original_name.split('.').pop()?.toLowerCase() || ''
 })
 
