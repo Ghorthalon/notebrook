@@ -4,13 +4,18 @@
       'channel-item',
       { 'channel-item--active': isActive }
     ]"
+    :data-channel-index="channelIndex"
+    role="listitem"
   >
     <div class="channel-wrapper">
       <button
         class="channel-button"
         @click="$emit('select', channel.id)"
+        @focus="handleFocus"
+        @keydown="handleKeydown"
+        :tabindex="tabindex"
         :aria-pressed="isActive"
-        :aria-label="`Select channel ${channel.name}`"
+        :aria-label="channelAriaLabel"
       >
         <span class="channel-name">{{ channel.name }}</span>
         <span v-if="unreadCount" class="channel-unread">
@@ -31,20 +36,46 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Channel } from '@/types'
 
 interface Props {
   channel: Channel
   isActive: boolean
   unreadCount?: number
+  tabindex?: number
+  channelIndex?: number
 }
 
-defineProps<Props>()
-
-defineEmits<{
+const emit = defineEmits<{
   select: [channelId: number]
   info: [channel: Channel]
+  focus: [index: number]
+  keydown: [event: KeyboardEvent, index: number]
 }>()
+
+const props = defineProps<Props>()
+
+// Better ARIA label that announces the channel name and unread count
+const channelAriaLabel = computed(() => {
+  let label = `${props.channel.name} channel`
+  if (props.unreadCount) {
+    label += `, ${props.unreadCount} unread message${props.unreadCount > 1 ? 's' : ''}`
+  }
+  return label
+})
+
+const handleFocus = () => {
+  if (props.channelIndex !== undefined) {
+    emit('focus', props.channelIndex)
+  }
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (props.channelIndex !== undefined) {
+    emit('keydown', event, props.channelIndex)
+  }
+}
 </script>
 
 <style scoped>

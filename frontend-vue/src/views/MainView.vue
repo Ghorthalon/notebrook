@@ -309,6 +309,11 @@ const selectChannel = async (channelId: number) => {
   }
   
   scrollToBottom()
+  
+  // Auto-focus message input when switching channels
+  nextTick(() => {
+    messageInput.value?.focus()
+  })
 }
 
 const handleSendMessage = async (content: string) => {
@@ -452,7 +457,12 @@ onMounted(async () => {
     await selectChannel(appStore.channels[0].id)
   }
   
-  // 6. Set up periodic sync for unsent messages
+  // 6. Auto-focus message input on page load
+  nextTick(() => {
+    messageInput.value?.focus()
+  })
+  
+  // 7. Set up periodic sync for unsent messages
   const syncInterval = setInterval(async () => {
     if (appStore.unsentMessages.length > 0) {
       try {

@@ -25,11 +25,8 @@ export function useKeyboardShortcuts() {
   }
 
   const handleKeydown = (event: KeyboardEvent) => {
-    // Skip shortcuts when focused on input/textarea elements
     const target = event.target as HTMLElement
-    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
-      return
-    }
+    const isInInputField = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
 
     const config: ShortcutConfig = {
       key: event.key.toLowerCase(),
@@ -44,6 +41,16 @@ export function useKeyboardShortcuts() {
     const shortcut = shortcuts.value.get(shortcutKey)
 
     if (shortcut) {
+      // Allow certain shortcuts to work globally, even in input fields
+      const isGlobalShortcut = (shortcut.ctrlKey && shortcut.shiftKey) || 
+                              shortcut.altKey || 
+                              shortcut.key === 'escape'
+      
+      // Skip shortcuts that shouldn't work in input fields
+      if (isInInputField && !isGlobalShortcut) {
+        return
+      }
+      
       if (shortcut.preventDefault !== false) {
         event.preventDefault()
       }
