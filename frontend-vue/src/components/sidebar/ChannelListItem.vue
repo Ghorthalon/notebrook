@@ -12,9 +12,11 @@
         class="channel-button"
         @click="$emit('select', channel.id)"
         @focus="handleFocus"
+        role="option"
+        :aria-current="isActive"
+        aria-selected="true"
         @keydown="handleKeydown"
         :tabindex="tabindex"
-        :aria-pressed="isActive"
         :aria-label="channelAriaLabel"
       >
         <span class="channel-name">{{ channel.name }}</span>
@@ -58,7 +60,7 @@ const props = defineProps<Props>()
 
 // Better ARIA label that announces the channel name and unread count
 const channelAriaLabel = computed(() => {
-  let label = `${props.channel.name} channel`
+  let label = `#${props.channel.name}`
   if (props.unreadCount) {
     label += `, ${props.unreadCount} unread message${props.unreadCount > 1 ? 's' : ''}`
   }
