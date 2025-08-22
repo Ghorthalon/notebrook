@@ -7,7 +7,7 @@
     :data-message-id="message.id"
     :tabindex="tabindex || -1"
     :aria-label="messageAriaLabel"
-    role="listitem"
+    role="option"
     @keydown="handleKeydown"
   >
     <div class="message__content">

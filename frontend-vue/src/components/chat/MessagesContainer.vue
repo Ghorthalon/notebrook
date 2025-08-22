@@ -1,10 +1,11 @@
 <template>
-  <div class="messages-container" ref="containerRef" @keydown="handleKeydown" tabindex="0" role="list"
+  <div class="messages-container" ref="containerRef" @keydown="handleKeydown" tabindex="0" role="listbox"
     :aria-label="messagesAriaLabel">
     <div class="messages" role="presentation">
       <!-- Regular Messages -->
       <MessageItem v-for="(message, index) in messages" :key="message.id" :message="message"
         :tabindex="index === focusedMessageIndex ? 0 : -1" :data-message-index="index"
+        :aria-selected="index === focusedMessageIndex ? 'true' : 'false'"
         @focus="focusedMessageIndex = index" />
 
       <!-- Unsent Messages -->

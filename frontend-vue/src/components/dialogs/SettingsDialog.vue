@@ -6,6 +6,7 @@
         
         <label class="setting-item">
           <input 
+          ref="soundInput"
             type="checkbox" 
             v-model="localSettings.soundEnabled"
             class="checkbox"
@@ -245,6 +246,7 @@ const isSaving = ref(false)
 const isResetting = ref(false)
 const showResetConfirm = ref(false)
 const selectedVoiceURI = ref('')
+const soundInput = ref()
 
 // Computed property for current server URL
 const currentServerUrl = computed(() => authStore.serverUrl)
@@ -338,6 +340,7 @@ onMounted(() => {
   
   // Set up voice selection
   selectedVoiceURI.value = appStore.settings.selectedVoiceURI || ''
+  soundInput.value.focus();
 })
 </script>
 
