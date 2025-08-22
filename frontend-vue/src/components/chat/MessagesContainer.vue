@@ -1,33 +1,16 @@
 <template>
-  <div 
-    class="messages-container" 
-    ref="containerRef"
-    @keydown="handleKeydown"
-    tabindex="0"
-    role="list"
-    :aria-label="messagesAriaLabel"
-  >
+  <div class="messages-container" ref="containerRef" @keydown="handleKeydown" tabindex="0" role="list"
+    :aria-label="messagesAriaLabel">
     <div class="messages" role="presentation">
       <!-- Regular Messages -->
-      <MessageItem
-        v-for="(message, index) in messages"
-        :key="message.id"
-        :message="message"
-        :tabindex="index === focusedMessageIndex ? 0 : -1"
-        :data-message-index="index"
-        @focus="focusedMessageIndex = index"
-      />
-      
+      <MessageItem v-for="(message, index) in messages" :key="message.id" :message="message"
+        :tabindex="index === focusedMessageIndex ? 0 : -1" :data-message-index="index"
+        @focus="focusedMessageIndex = index" />
+
       <!-- Unsent Messages -->
-      <MessageItem
-        v-for="(unsentMsg, index) in unsentMessages"
-        :key="unsentMsg.id"
-        :message="unsentMsg"
-        :is-unsent="true"
-        :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
-        :data-message-index="messages.length + index"
-        @focus="focusedMessageIndex = messages.length + index"
-      />
+      <MessageItem v-for="(unsentMsg, index) in unsentMessages" :key="unsentMsg.id" :message="unsentMsg"
+        :is-unsent="true" :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
+        :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index" />
     </div>
   </div>
 </template>
@@ -59,13 +42,13 @@ const totalMessages = computed(() => allMessages.value.length)
 const messagesAriaLabel = computed(() => {
   const total = totalMessages.value
   const current = focusedMessageIndex.value + 1
-  
+
   if (total === 0) {
     return 'Messages list, no messages'
   } else if (total === 1) {
     return 'Messages list, 1 message'
   } else {
-    return `Messages list, ${total} messages, currently focused on message ${current} of ${total}`
+    return `Messages list, ${total} messages`
   }
 })
 
@@ -74,50 +57,50 @@ const navigationHint = 'Use arrow keys to navigate, Page Up/Down to jump 10 mess
 // Keyboard navigation
 const handleKeydown = (event: KeyboardEvent) => {
   if (totalMessages.value === 0) return
-  
+
   let newIndex = focusedMessageIndex.value
-  
+
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault()
       newIndex = Math.max(0, focusedMessageIndex.value - 1)
       break
-      
+
     case 'ArrowDown':
       event.preventDefault()
       newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 1)
       break
-      
+
     case 'PageUp':
       event.preventDefault()
       newIndex = Math.max(0, focusedMessageIndex.value - 10)
       break
-      
+
     case 'PageDown':
       event.preventDefault()
       newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 10)
       break
-      
+
     case 'Home':
       event.preventDefault()
       newIndex = 0
       break
-      
+
     case 'End':
       event.preventDefault()
       newIndex = totalMessages.value - 1
       break
-      
+
     case 'Enter':
     case ' ':
       event.preventDefault()
       selectCurrentMessage()
       return
-      
+
     default:
       return
   }
-  
+
   if (newIndex !== focusedMessageIndex.value) {
     focusMessage(newIndex)
   }
@@ -229,19 +212,19 @@ defineExpose({
   .messages-container {
     background: #111827;
   }
-  
+
   .messages-container:focus {
     outline-color: #60a5fa;
   }
-  
+
   .messages-container::-webkit-scrollbar-track {
     background: #1f2937;
   }
-  
+
   .messages-container::-webkit-scrollbar-thumb {
     background: #4b5563;
   }
-  
+
   .messages-container::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
   }

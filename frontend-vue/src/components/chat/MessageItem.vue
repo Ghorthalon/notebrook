@@ -5,7 +5,7 @@
       { 'message--unsent': isUnsent }
     ]"
     :data-message-id="message.id"
-    :tabindex="tabindex || 0"
+    :tabindex="tabindex || -1"
     :aria-label="messageAriaLabel"
     role="listitem"
     @keydown="handleKeydown"

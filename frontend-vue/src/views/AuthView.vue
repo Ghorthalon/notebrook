@@ -9,6 +9,7 @@
       <form @submit.prevent="handleAuth" class="auth-form">
         <BaseInput
           v-model="serverUrl"
+          ref="serverInput"
           type="url"
           label="Server URL (optional)"
           :placeholder="defaultServerUrl"
@@ -59,7 +60,7 @@ const serverUrl = ref('')
 const error = ref('')
 const isLoading = ref(false)
 const tokenInput = ref()
-
+const serverInput = ref()
 // Get default server URL for placeholder
 const defaultServerUrl = authStore.getDefaultServerUrl()
 
@@ -80,7 +81,7 @@ const handleAuth = async () => {
       router.push('/')
     } else {
       error.value = 'Invalid authentication token or server URL'
-      tokenInput.value?.focus()
+      serverInput.value?.focus()
     }
   } catch (err) {
     error.value = 'Authentication failed. Please check your token and server URL.'
@@ -91,7 +92,7 @@ const handleAuth = async () => {
 }
 
 onMounted(() => {
-  tokenInput.value?.focus()
+  serverInput.value?.focus()
   playSound('intro')
 })
 </script>

@@ -23,7 +23,7 @@
         </span>
       </button>
       
-      <button
+      <button v-if="isActive"
         class="channel-info-button"
         @click.stop="$emit('info', channel)"
         :aria-label="`Channel info for ${channel.name}`"
