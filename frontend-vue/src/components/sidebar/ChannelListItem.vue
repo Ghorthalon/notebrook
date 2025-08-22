@@ -60,7 +60,7 @@ const props = defineProps<Props>()
 
 // Better ARIA label that announces the channel name and unread count
 const channelAriaLabel = computed(() => {
-  let label = `#${props.channel.name}`
+  let label = `${props.channel.name}`
   if (props.unreadCount) {
     label += `, ${props.unreadCount} unread message${props.unreadCount > 1 ? 's' : ''}`
   }
