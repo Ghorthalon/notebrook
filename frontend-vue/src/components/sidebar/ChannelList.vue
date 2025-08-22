@@ -1,6 +1,6 @@
 <template>
   <div class="channel-list-container" ref="containerRef">
-    <ul class="channel-list" role="list" aria-label="Channels">
+    <ul class="channel-list" role="listbox" aria-label="Channels">
       <ChannelListItem
         v-for="(channel, index) in channels"
         :key="channel.id"
