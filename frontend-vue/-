@@ -1,0 +1,228 @@
+<template>
+  <div class="base-textarea">
+    <label v-if="label" :for="textareaId" class="base-textarea__label">
+      {{ label }}
+      <span v-if="required" class="base-textarea__required">*</span>
+    </label>
+    
+    <div class="base-textarea__wrapper">
+      <textarea
+        :id="textareaId"
+        ref="textareaRef"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :readonly="readonly"
+        :required="required"
+        :rows="rows"
+        :maxlength="maxlength"
+        :aria-invalid="error ? 'true' : 'false'"
+        :aria-describedby="error ? `${textareaId}-error` : undefined"
+        :class="[
+          'base-textarea__field',
+          { 'base-textarea__field--error': error }
+        ]"
+        @input="handleInput"
+        @blur="$emit('blur', $event)"
+        @focus="$emit('focus', $event)"
+        @keydown="handleKeydown"
+        @keyup="$emit('keyup', $event)"
+      />
+    </div>
+    
+    <div v-if="showCharCount && maxlength" class="base-textarea__char-count">
+      {{ modelValue.length }}/{{ maxlength }}
+    </div>
+    
+    <div v-if="error" :id="`${textareaId}-error`" class="base-textarea__error">
+      {{ error }}
+    </div>
+    
+    <div v-else-if="helpText" class="base-textarea__help">
+      {{ helpText }}
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface Props {
+  modelValue: string
+  label?: string
+  placeholder?: string
+  disabled?: boolean
+  readonly?: boolean
+  required?: boolean
+  rows?: number
+  maxlength?: number
+  showCharCount?: boolean
+  error?: string
+  helpText?: string
+  id?: string
+  autoResize?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  disabled: false,
+  readonly: false,
+  required: false,
+  rows: 3,
+  showCharCount: false,
+  autoResize: false
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  blur: [event: FocusEvent]
+  focus: [event: FocusEvent]
+  keydown: [event: KeyboardEvent]
+  keyup: [event: KeyboardEvent]
+  submit: []
+}>()
+
+const textareaRef = ref<HTMLTextAreaElement>()
+const textareaId = computed(() => props.id || `textarea-${Math.random().toString(36).substr(2, 9)}`)
+
+const handleInput = (event: Event) => {
+  const target = event.target as HTMLTextAreaElement
+  emit('update:modelValue', target.value)
+  
+  if (props.autoResize) {
+    autoResize(target)
+  }
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  emit('keydown', event)
+  
+  // Submit on Ctrl+Enter or Cmd+Enter
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault()
+    emit('submit')
+  }
+}
+
+const autoResize = (textarea: HTMLTextAreaElement) => {
+  textarea.style.height = 'auto'
+  textarea.style.height = textarea.scrollHeight + 'px'
+}
+
+const focus = () => {
+  textareaRef.value?.focus()
+}
+
+const selectAll = () => {
+  textareaRef.value?.select()
+}
+
+defineExpose({
+  focus,
+  selectAll,
+  textareaRef
+})
+</script>
+
+<style scoped>
+.base-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.base-textarea__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.base-textarea__required {
+  color: #ef4444;
+}
+
+.base-textarea__wrapper {
+  position: relative;
+}
+
+.base-textarea__field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: #ffffff;
+  color: #111827;
+  transition: all 0.2s ease;
+  outline: none;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+.base-textarea__field:focus {
+  border-color: #646cff;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.base-textarea__field:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  resize: none;
+}
+
+.base-textarea__field:readonly {
+  background-color: #f9fafb;
+  cursor: default;
+  resize: none;
+}
+
+.base-textarea__field--error {
+  border-color: #ef4444;
+}
+
+.base-textarea__field--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.base-textarea__char-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+.base-textarea__error {
+  font-size: 0.875rem;
+  color: #ef4444;
+}
+
+.base-textarea__help {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .base-textarea__label {
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .base-textarea__field {
+    background-color: #374151;
+    color: rgba(255, 255, 255, 0.87);
+    border-color: #4b5563;
+  }
+  
+  .base-textarea__field:disabled,
+  .base-textarea__field:readonly {
+    background-color: #1f2937;
+    color: #9ca3af;
+  }
+  
+  .base-textarea__help,
+  .base-textarea__char-count {
+    color: #9ca3af;
+  }
+}
+</style>

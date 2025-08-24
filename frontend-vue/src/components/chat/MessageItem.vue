@@ -4,6 +4,7 @@
       'message',
       { 'message--unsent': isUnsent }
     ]"
+    ref="rootEl"
     :data-message-id="message.id"
     :tabindex="tabindex || -1"
     :aria-label="messageAriaLabel"
@@ -33,10 +34,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import { useAudio } from '@/composables/useAudio'
 import { useToastStore } from '@/stores/toast'
 import { useAppStore } from '@/stores/app'
+import { apiService } from '@/services/api'
 import { formatSmartTimestamp, formatTimestampForScreenReader } from '@/utils/time'
 import FileAttachment from './FileAttachment.vue'
 import type { ExtendedMessage, UnsentMessage, FileAttachment as FileAttachmentType } from '@/types'
@@ -56,6 +58,17 @@ const props = withDefaults(defineProps<Props>(), {
 const { speak, playSound } = useAudio()
 const toastStore = useToastStore()
 const appStore = useAppStore()
+
+// Root element ref for DOM-based focus management
+const rootEl = ref<HTMLElement | null>(null)
+
+// Fallback: focus the chat input textarea
+const focusFallbackToInput = () => {
+  const inputEl = document.querySelector('.message-input .base-textarea__field') as HTMLElement | null
+  if (inputEl) {
+    inputEl.focus()
+  }
+}
 
 // Check if message has a file attachment
 const hasFileAttachment = computed(() => {
@@ -160,6 +173,55 @@ const handleKeydown = (event: KeyboardEvent) => {
     } else {
       toastStore.info('Text-to-speech is disabled')
     }
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    handleDelete()
+  }
+}
+
+// Delete current message (supports sent and unsent)
+const handleDelete = async () => {
+  try {
+    // Capture neighboring elements before removal
+    const current = rootEl.value
+    const prevEl = (current?.previousElementSibling as HTMLElement | null) || null
+    const nextEl = (current?.nextElementSibling as HTMLElement | null) || null
+    const isFirst = !prevEl
+    const targetToFocus = isFirst ? nextEl : prevEl
+
+    if (props.isUnsent) {
+      // Unsent local message
+      const unsent = props.message as UnsentMessage
+      appStore.removeUnsentMessage(unsent.id)
+      toastStore.success('Unsent message removed')
+      // focus the closest message
+      await nextTick()
+      if (targetToFocus && document.contains(targetToFocus)) {
+        if (!targetToFocus.hasAttribute('tabindex')) targetToFocus.setAttribute('tabindex', '-1')
+        targetToFocus.focus()
+      } else {
+        focusFallbackToInput()
+      }
+      return
+    }
+
+    // Sent message: call API then update store
+    const msg = props.message as ExtendedMessage
+    await apiService.deleteMessage(msg.channel_id, msg.id)
+    appStore.removeMessage(msg.id)
+    toastStore.success('Message deleted')
+    // focus the closest message
+    await nextTick()
+    if (targetToFocus && document.contains(targetToFocus)) {
+      if (!targetToFocus.hasAttribute('tabindex')) targetToFocus.setAttribute('tabindex', '-1')
+      targetToFocus.focus()
+    } else {
+      focusFallbackToInput()
+    }
+    
+  } catch (error) {
+    console.error('Failed to delete message:', error)
+    toastStore.error('Failed to delete message')
   }
 }
 </script>
