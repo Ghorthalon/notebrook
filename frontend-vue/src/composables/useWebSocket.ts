@@ -64,6 +64,24 @@ export function useWebSocket() {
     appStore.removeMessage(parseInt(data.id))
   }
 
+  const handleMessageMoved = (data: { messageId: string, sourceChannelId: string, targetChannelId: string }) => {
+    console.log('WebSocket: Message moved event received:', data)
+    const messageId = parseInt(data.messageId)
+    const sourceChannelId = parseInt(data.sourceChannelId) 
+    const targetChannelId = parseInt(data.targetChannelId)
+    
+    appStore.moveMessage(messageId, sourceChannelId, targetChannelId)
+    
+    // Show toast notification if the move affects the current view
+    if (appStore.currentChannelId === sourceChannelId || appStore.currentChannelId === targetChannelId) {
+      const sourceChannel = appStore.channels.find(c => c.id === sourceChannelId)
+      const targetChannel = appStore.channels.find(c => c.id === targetChannelId)
+      if (sourceChannel && targetChannel) {
+        toastStore.info(`Message moved from "${sourceChannel.name}" to "${targetChannel.name}"`)
+      }
+    }
+  }
+
   const handleFileUploaded = (data: any) => {
     // Handle file upload events with flattened format
     const messageUpdate: Partial<ExtendedMessage> = {
@@ -127,6 +145,7 @@ export function useWebSocket() {
     websocketService.on('message-created', handleMessageCreated)
     websocketService.on('message-updated', handleMessageUpdated)
     websocketService.on('message-deleted', handleMessageDeleted)
+    websocketService.on('message-moved', handleMessageMoved)
     websocketService.on('file-uploaded', handleFileUploaded)
     websocketService.on('channel-created', handleChannelCreated)
     websocketService.on('channel-deleted', handleChannelDeleted)
@@ -151,6 +170,7 @@ export function useWebSocket() {
     websocketService.off('message-created', handleMessageCreated)
     websocketService.off('message-updated', handleMessageUpdated)
     websocketService.off('message-deleted', handleMessageDeleted)
+    websocketService.off('message-moved', handleMessageMoved)
     websocketService.off('file-uploaded', handleFileUploaded)
     websocketService.off('channel-created', handleChannelCreated)
     websocketService.off('channel-deleted', handleChannelDeleted)

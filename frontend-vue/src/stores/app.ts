@@ -112,6 +112,35 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const moveMessage = (messageId: number, sourceChannelId: number, targetChannelId: number) => {
+    // Find and remove message from source channel
+    const sourceMessages = messages.value[sourceChannelId] || []
+    const messageIndex = sourceMessages.findIndex(m => m.id === messageId)
+    
+    if (messageIndex === -1) {
+      console.warn(`Message ${messageId} not found in source channel ${sourceChannelId}`)
+      return
+    }
+    
+    const message = sourceMessages[messageIndex]
+    sourceMessages.splice(messageIndex, 1)
+    
+    // Update message's channel_id and add to target channel
+    const updatedMessage = { ...message, channel_id: targetChannelId }
+    
+    if (!messages.value[targetChannelId]) {
+      messages.value[targetChannelId] = []
+    }
+    
+    const targetMessages = messages.value[targetChannelId]
+    targetMessages.push(updatedMessage)
+    
+    // Keep chronological order in target channel
+    targetMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    
+    console.log(`Message ${messageId} moved from channel ${sourceChannelId} to ${targetChannelId}`)
+  }
+
   const addUnsentMessage = (message: UnsentMessage) => {
     unsentMessages.value.push(message)
   }
@@ -182,6 +211,7 @@ export const useAppStore = defineStore('app', () => {
     addMessage,
     updateMessage,
     removeMessage,
+    moveMessage,
     addUnsentMessage,
     removeUnsentMessage,
     updateSettings,

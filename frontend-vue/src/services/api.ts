@@ -118,6 +118,13 @@ class ApiService {
     })
   }
 
+  async moveMessage(channelId: number, messageId: number, targetChannelId: number): Promise<{ message: string, messageId: number, targetChannelId: number }> {
+    return this.request(`/channels/${channelId}/messages/${messageId}/move`, {
+      method: 'PUT',
+      body: JSON.stringify({ targetChannelId })
+    })
+  }
+
   // Files
   async uploadFile(channelId: number, messageId: number, file: File): Promise<FileAttachment> {
     const formData = new FormData()

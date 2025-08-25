@@ -14,6 +14,9 @@ export const attachEvents = (ws: WebSocket) => {
     events.on('message-deleted', (id) => {
         ws.send(JSON.stringify({ type: 'message-deleted', data: {id }}));
     });
+    events.on('message-moved', (messageId, sourceChannelId, targetChannelId) => {
+        ws.send(JSON.stringify({ type: 'message-moved', data: {messageId, sourceChannelId, targetChannelId }}));
+    });
     events.on('channel-created', (channel) => {
         ws.send(JSON.stringify({ type: 'channel-created', data: {channel }}));
     });

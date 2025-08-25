@@ -53,6 +53,7 @@
           :messages="appStore.currentMessages"
           :unsent-messages="appStore.unsentMessagesForChannel"
           ref="messagesContainer"
+          @open-message-dialog="handleOpenMessageDialog"
         />
         
         <!-- Message Input -->
@@ -117,6 +118,18 @@
         @close="showChannelInfoDialog = false" 
       />
     </BaseDialog>
+
+    <BaseDialog v-model:show="showMessageDialog" title="">
+      <MessageDialog 
+        v-if="selectedMessage"
+        :message="selectedMessage"
+        :open="showMessageDialog"
+        @close="handleCloseMessageDialog" 
+        @edit="handleEditMessage"
+        @delete="handleDeleteMessage"
+        @move="handleMoveMessage"
+      />
+    </BaseDialog>
   </div>
 </template>
 
@@ -148,9 +161,10 @@ import FileUploadDialog from '@/components/dialogs/FileUploadDialog.vue'
 import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue'
 import CameraCaptureDialog from '@/components/dialogs/CameraCaptureDialog.vue'
 import ChannelInfoDialog from '@/components/dialogs/ChannelInfoDialog.vue'
+import MessageDialog from '@/components/dialogs/MessageDialog.vue'
 
 // Types
-import type { ExtendedMessage, Channel } from '@/types'
+import type { ExtendedMessage, UnsentMessage, Channel } from '@/types'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -178,7 +192,9 @@ const showSettings = ref(false)
 const showSearchDialog = ref(false)
 const showFileDialog = ref(false)
 const showVoiceDialog = ref(false)
+const showMessageDialog = ref(false)
 const showCameraDialog = ref(false)
+const selectedMessage = ref<ExtendedMessage | null>(null)
 
 // Mobile sidebar state
 const sidebarOpen = ref(false)
@@ -276,6 +292,21 @@ const setupKeyboardShortcuts = () => {
       if (isSpeaking.value) {
         stopSpeaking()
         toastStore.info('Speech stopped')
+      }
+    }
+  })
+  
+  // Shift+Enter - Open message dialog for focused message
+  addShortcut({
+    key: 'enter',
+    shiftKey: true,
+    handler: () => {
+      const focusedMessage = messagesContainer.value?.getFocusedMessage()
+      if (focusedMessage) {
+        handleOpenMessageDialog(focusedMessage)
+        toastStore.info('Opening message dialog')
+      } else {
+        toastStore.info('No message is focused')
       }
     }
   })
@@ -408,6 +439,93 @@ const announceLastMessage = (position: number) => {
 
 const scrollToBottom = () => {
   messagesContainer.value?.scrollToBottom()
+}
+
+// Message dialog handlers
+const handleOpenMessageDialog = (message: ExtendedMessage | UnsentMessage) => {
+  // Only allow dialog for sent messages (ExtendedMessage), not unsent ones
+  if ('created_at' in message) {
+    selectedMessage.value = message as ExtendedMessage
+    showMessageDialog.value = true
+  }
+}
+
+const handleCloseMessageDialog = () => {
+  showMessageDialog.value = false
+  selectedMessage.value = null
+}
+
+const handleEditMessage = async (messageId: number, content: string) => {
+  try {
+    if (!appStore.currentChannelId) return
+    
+    const response = await apiService.updateMessage(appStore.currentChannelId, messageId, content)
+    
+    // Update the message in the local store
+    const messageIndex = appStore.currentMessages.findIndex(m => m.id === messageId)
+    if (messageIndex !== -1) {
+      const updatedMessage = { ...appStore.currentMessages[messageIndex], content: content }
+      appStore.updateMessage(messageId, updatedMessage)
+    }
+    
+    // Update the selected message for the dialog
+    if (selectedMessage.value && selectedMessage.value.id === messageId) {
+      selectedMessage.value = { ...selectedMessage.value, content: content }
+    }
+    
+    toastStore.success('Message updated successfully')
+    handleCloseMessageDialog()
+    
+  } catch (error) {
+    console.error('Failed to edit message:', error)
+    toastStore.error('Failed to update message')
+  }
+}
+
+const handleDeleteMessage = async (messageId: number) => {
+  try {
+    if (!appStore.currentChannelId) return
+    
+    await apiService.deleteMessage(appStore.currentChannelId, messageId)
+    
+    // Remove the message from the local store
+    const messageIndex = appStore.currentMessages.findIndex(m => m.id === messageId)
+    if (messageIndex !== -1) {
+      appStore.currentMessages.splice(messageIndex, 1)
+    }
+    
+    toastStore.success('Message deleted successfully')
+    handleCloseMessageDialog()
+    
+  } catch (error) {
+    console.error('Failed to delete message:', error)
+    toastStore.error('Failed to delete message')
+  }
+}
+
+const handleMoveMessage = async (messageId: number, targetChannelId: number) => {
+  try {
+    if (!appStore.currentChannelId) return
+    
+    // Find the source channel for the message
+    let sourceChannelId = appStore.currentChannelId
+    const currentMessage = appStore.currentMessages.find(m => m.id === messageId)
+    if (currentMessage) {
+      sourceChannelId = currentMessage.channel_id
+    }
+    
+    await apiService.moveMessage(sourceChannelId, messageId, targetChannelId)
+    
+    // Optimistically update local state
+    appStore.moveMessage(messageId, sourceChannelId, targetChannelId)
+    
+    toastStore.success('Message moved successfully')
+    handleCloseMessageDialog()
+    
+  } catch (error) {
+    console.error('Failed to move message:', error)
+    toastStore.error('Failed to move message')
+  }
 }
 
 const handleChannelCreated = async (channelId: number) => {

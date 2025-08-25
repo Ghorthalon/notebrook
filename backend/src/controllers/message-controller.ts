@@ -52,3 +52,29 @@ export const getMessages = async (req: Request, res: Response) => {
 
     res.json({ messages });
 }
+
+export const moveMessage = async (req: Request, res: Response) => {
+    const { messageId } = req.params;
+    const { targetChannelId } = req.body;
+    
+    if (!messageId || !targetChannelId) {
+        return res.status(400).json({ error: 'Message ID and target channel ID are required' });
+    }
+    
+    try {
+        const result = await MessageService.moveMessage(messageId, targetChannelId);
+        logger.info(`Message ${messageId} moved to channel ${targetChannelId}`);
+        
+        res.json({ 
+            message: 'Message moved successfully',
+            messageId: parseInt(messageId),
+            targetChannelId: parseInt(targetChannelId)
+        });
+    } catch (error: any) {
+        if (error.message === 'Message not found') {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+        logger.critical(`Failed to move message ${messageId}:`, error);
+        res.status(500).json({ error: 'Failed to move message' });
+    }
+}

@@ -81,3 +81,27 @@ export const getMessage = async (id: string) => {
   const row = query.get({ id: id });
   return row;
 }
+
+export const moveMessage = async (messageId: string, targetChannelId: string) => {
+  // Get current message to emit proper events
+  const currentMessage = await getMessage(messageId);
+  if (!currentMessage) {
+    throw new Error('Message not found');
+  }
+  
+  const query = db.prepare(`UPDATE messages SET channelId = $targetChannelId WHERE id = $messageId`);
+  const result = query.run({ messageId: messageId, targetChannelId: targetChannelId });
+  
+  if (result.changes === 0) {
+    throw new Error('Message not found or not updated');
+  }
+  
+  // Update FTS table if enabled
+  if (FTS5Enabled) {
+    // FTS table doesn't need channelId update, just content remains searchable
+    // No additional FTS changes needed since content hasn't changed
+  }
+  
+  events.emit('message-moved', messageId, (currentMessage as any).channelId, targetChannelId);
+  return result;
+}

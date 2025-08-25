@@ -10,6 +10,7 @@
     :aria-label="messageAriaLabel"
     role="option"
     @keydown="handleKeydown"
+    @click="handleClick"
   >
     <div class="message__content">
       {{ message.content }}
@@ -49,6 +50,10 @@ interface Props {
   isUnsent?: boolean
   tabindex?: number
 }
+
+const emit = defineEmits<{
+  'open-dialog': [message: ExtendedMessage | UnsentMessage]
+}>()
 
 const props = withDefaults(defineProps<Props>(), {
   isUnsent: false
@@ -152,6 +157,13 @@ const getFileType = (filename: string): string => {
     return 'text document'
   } else {
     return 'file'
+  }
+}
+
+const handleClick = () => {
+  // Only open dialog for sent messages (not unsent ones)
+  if (!props.isUnsent) {
+    emit('open-dialog', props.message)
   }
 }
 
@@ -271,10 +283,14 @@ const handleDelete = async () => {
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .message:hover {
   background: #f1f3f4;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
 }
 
 .message:focus {
@@ -329,6 +345,8 @@ const handleDelete = async () => {
   
   .message:hover {
     background: #374151;
+    border-color: #60a5fa;
+    box-shadow: 0 2px 4px rgba(96, 165, 250, 0.1);
   }
   
   .message__content {

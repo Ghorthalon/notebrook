@@ -6,12 +6,14 @@
       <MessageItem v-for="(message, index) in messages" :key="message.id" :message="message"
         :tabindex="index === focusedMessageIndex ? 0 : -1" :data-message-index="index"
         :aria-selected="index === focusedMessageIndex ? 'true' : 'false'"
-        @focus="focusedMessageIndex = index" />
+        @focus="focusedMessageIndex = index" 
+        @open-dialog="emit('open-message-dialog', $event)" />
 
       <!-- Unsent Messages -->
       <MessageItem v-for="(unsentMsg, index) in unsentMessages" :key="unsentMsg.id" :message="unsentMsg"
         :is-unsent="true" :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
-        :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index" />
+        :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index" 
+        @open-dialog="emit('open-message-dialog', $event)" />
     </div>
   </div>
 </template>
@@ -28,6 +30,7 @@ interface Props {
 
 const emit = defineEmits<{
   'message-selected': [message: ExtendedMessage | UnsentMessage, index: number]
+  'open-message-dialog': [message: ExtendedMessage | UnsentMessage]
 }>()
 
 const props = defineProps<Props>()
@@ -165,9 +168,18 @@ onMounted(() => {
   }
 })
 
+const getFocusedMessage = (): ExtendedMessage | UnsentMessage | null => {
+  const messages = allMessages.value
+  if (focusedMessageIndex.value >= 0 && focusedMessageIndex.value < messages.length) {
+    return messages[focusedMessageIndex.value]
+  }
+  return null
+}
+
 defineExpose({
   scrollToBottom,
-  focusMessageById
+  focusMessageById,
+  getFocusedMessage
 })
 </script>
 
