@@ -71,9 +71,22 @@ export const useAppStore = defineStore('app', () => {
     if (!messages.value[message.channel_id]) {
       messages.value[message.channel_id] = []
     }
-    messages.value[message.channel_id].push(message)
-    console.log('Store: Messages for channel', message.channel_id, 'now has', messages.value[message.channel_id].length, 'messages')
-    
+
+    const channelMessages = messages.value[message.channel_id]
+    const existingIndex = channelMessages.findIndex(m => m.id === message.id)
+
+    if (existingIndex !== -1) {
+      // Upsert: update existing to avoid duplicates from WebSocket vs sync
+      channelMessages[existingIndex] = { ...channelMessages[existingIndex], ...message }
+    } else {
+      channelMessages.push(message)
+    }
+
+    // Keep chronological order by created_at
+    channelMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+    console.log('Store: Messages for channel', message.channel_id, 'now has', channelMessages.length, 'messages')
+
     // Note: Auto-save is now handled by the sync service to avoid excessive I/O
   }
 

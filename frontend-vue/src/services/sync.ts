@@ -8,7 +8,11 @@ export class SyncService {
   }
 
   /**
-   * Sync messages for a channel: merge server data with local data
+   * Sync messages for a channel: replace local data with server data
+   *
+   * Prunes any local messages that are no longer present on the server
+   * instead of keeping them around. We still keep unsent messages in the
+   * separate unsent queue handled elsewhere.
    */
   async syncChannelMessages(channelId: number): Promise<void> {
     try {
@@ -19,55 +23,35 @@ export class SyncService {
       // Get server messages
       const serverResponse = await apiService.getMessages(channelId)
       const serverMessages = serverResponse.messages
-      
-      // Get local messages
-      const localMessages = appStore.messages[channelId] || []
-      
-      console.log(`Server has ${serverMessages.length} messages, local has ${localMessages.length} messages`)
-      
-      // Merge messages using a simple strategy:
-      // 1. Create a map of all messages by ID
-      // 2. Server messages take precedence (they may have been updated)
-      // 3. Keep local messages that don't exist on server (may be unsent)
-      
-      const messageMap = new Map<number, ExtendedMessage>()
-      
-      // Add local messages first
-      localMessages.forEach(msg => {
-        if (typeof msg.id === 'number') {
-          messageMap.set(msg.id, msg)
-        }
-      })
-      
-      // Add/update with server messages (server wins for conflicts)
-      serverMessages.forEach((msg: any) => {
-        // Transform server message format to match our types
-        const transformedMsg: ExtendedMessage = {
-          id: msg.id,
-          channel_id: msg.channelId || msg.channel_id,
-          content: msg.content,
-          created_at: msg.createdAt || msg.created_at,
-          file_id: msg.fileId || msg.file_id,
-          // Map the flattened file fields from backend
-          fileId: msg.fileId,
-          filePath: msg.filePath,
-          fileType: msg.fileType,
-          fileSize: msg.fileSize,
-          originalName: msg.originalName,
-          fileCreatedAt: msg.fileCreatedAt
-        }
-        console.log(`Sync: Processing message ${msg.id}, has file:`, !!msg.fileId, `(${msg.originalName})`)
-        messageMap.set(msg.id, transformedMsg)
-      })
-      
-      // Convert back to array, sorted by creation time
-      const mergedMessages = Array.from(messageMap.values())
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      
-      console.log(`Merged result: ${mergedMessages.length} messages`)
-      
-      // Update local storage
-      appStore.setMessages(channelId, mergedMessages)
+
+      console.log(`Server has ${serverMessages.length} messages, replacing local set for channel ${channelId}`)
+
+      // Transform and sort server messages only (pruning locals not on server)
+      const normalizedServerMessages: ExtendedMessage[] = serverMessages
+        .map((msg: any) => {
+          const transformedMsg: ExtendedMessage = {
+            id: msg.id,
+            channel_id: msg.channelId || msg.channel_id,
+            content: msg.content,
+            created_at: msg.createdAt || msg.created_at,
+            file_id: msg.fileId || msg.file_id,
+            // Map the flattened file fields from backend
+            fileId: msg.fileId,
+            filePath: msg.filePath,
+            fileType: msg.fileType,
+            fileSize: msg.fileSize,
+            originalName: msg.originalName,
+            fileCreatedAt: msg.fileCreatedAt
+          }
+          console.log(`Sync: Processing message ${msg.id}, has file:`, !!msg.fileId, `(${msg.originalName})`)
+          return transformedMsg
+        })
+        .sort((a: ExtendedMessage, b: ExtendedMessage) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+      console.log(`Pruned + normalized result: ${normalizedServerMessages.length} messages`)
+
+      // Update local storage with server truth
+      appStore.setMessages(channelId, normalizedServerMessages)
       await appStore.saveState()
       
     } catch (error) {

@@ -39,6 +39,7 @@ import { useAudio } from '@/composables/useAudio'
 import { useToastStore } from '@/stores/toast'
 import { useAppStore } from '@/stores/app'
 import { apiService } from '@/services/api'
+import { syncService } from '@/services/sync'
 import { formatSmartTimestamp, formatTimestampForScreenReader } from '@/utils/time'
 import FileAttachment from './FileAttachment.vue'
 import type { ExtendedMessage, UnsentMessage, FileAttachment as FileAttachmentType } from '@/types'
@@ -205,11 +206,48 @@ const handleDelete = async () => {
       return
     }
 
-    // Sent message: call API then update store
+    // Sent message: optimistic removal, then server delete
     const msg = props.message as ExtendedMessage
-    await apiService.deleteMessage(msg.channel_id, msg.id)
+
+    // Capture original position for potential rollback
+    const channelMessages = appStore.messages[msg.channel_id] || []
+    const originalIndex = channelMessages.findIndex(m => m.id === msg.id)
+
+    // Optimistically remove from local state for snappy UI
     appStore.removeMessage(msg.id)
-    toastStore.success('Message deleted')
+
+    // Focus the closest message immediately after local removal
+    await nextTick()
+    if (targetToFocus && document.contains(targetToFocus)) {
+      if (!targetToFocus.hasAttribute('tabindex')) targetToFocus.setAttribute('tabindex', '-1')
+      targetToFocus.focus()
+    } else {
+      focusFallbackToInput()
+    }
+
+    try {
+      await apiService.deleteMessage(msg.channel_id, msg.id)
+      // Attempt to sync the channel to reconcile with server state
+      try {
+        await syncService.syncChannelMessages(msg.channel_id)
+      } catch (syncError) {
+        console.warn('Post-delete sync failed; continuing with local state.', syncError)
+      }
+      toastStore.success('Message deleted')
+    } catch (error) {
+      // Rollback local removal on failure
+      if (originalIndex !== -1) {
+        const list = appStore.messages[msg.channel_id] || []
+        list.splice(Math.min(originalIndex, list.length), 0, msg)
+      }
+      await nextTick()
+      const restoredEl = document.querySelector(`[data-message-id="${msg.id}"]`) as HTMLElement | null
+      if (restoredEl) {
+        if (!restoredEl.hasAttribute('tabindex')) restoredEl.setAttribute('tabindex', '-1')
+        restoredEl.focus()
+      }
+      throw error
+    }
     // focus the closest message
     await nextTick()
     if (targetToFocus && document.contains(targetToFocus)) {
