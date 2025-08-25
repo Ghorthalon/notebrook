@@ -14,7 +14,6 @@
         @focus="handleFocus"
         role="option"
         :aria-current="isActive"
-        aria-selected="true"
         @keydown="handleKeydown"
         :tabindex="tabindex"
         :aria-label="channelAriaLabel"
