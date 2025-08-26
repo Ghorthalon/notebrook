@@ -157,6 +157,9 @@ defineExpose({
   outline: none;
   resize: vertical;
   min-height: 3rem;
+  /* iOS-specific optimizations */
+  -webkit-appearance: none;
+  -webkit-border-radius: 8px;
 }
 
 .base-textarea__field:focus {

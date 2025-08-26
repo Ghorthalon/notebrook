@@ -189,6 +189,12 @@ defineExpose({
   overflow-y: auto;
   padding: 1rem;
   background: #fafafa;
+  /* iOS-specific scroll optimizations */
+  -webkit-overflow-scrolling: touch;
+  -webkit-scroll-behavior: smooth;
+  scroll-behavior: smooth;
+  scroll-padding-top: 1rem;
+  scroll-padding-bottom: 1rem;
 }
 
 .messages-container:focus {

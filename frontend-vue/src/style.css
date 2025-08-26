@@ -1,3 +1,17 @@
+/* CSS Custom Properties for iOS Safe Areas and Dynamic Viewport */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0);
+  --safe-area-inset-right: env(safe-area-inset-right, 0);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-inset-left: env(safe-area-inset-left, 0);
+  
+  /* Dynamic viewport height that accounts for iOS Safari UI changes */
+  --vh-actual: 100vh;
+  --vh-small: 100svh; /* Small viewport height - excludes browser UI */
+  --vh-large: 100lvh; /* Large viewport height - includes browser UI */
+  --vh-dynamic: 100dvh; /* Dynamic viewport height - changes with browser UI */
+}
+
 /* Minimal reset styles only */
 * {
   box-sizing: border-box;
@@ -7,7 +21,7 @@ body {
   margin: 0;
   padding: 0;
   width: 100vw;
-  height: 100vh;
+  height: var(--vh-dynamic, 100vh);
   overflow: hidden;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -16,6 +30,9 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS-specific optimizations */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #app {
@@ -24,6 +41,25 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+/* iOS-specific touch and interaction optimizations */
+* {
+  /* Disable callouts and text selection on iOS for better touch interactions */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for content areas */
+input, textarea, [contenteditable="true"], .allow-select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Enable momentum scrolling globally for iOS */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Accessibility helpers */

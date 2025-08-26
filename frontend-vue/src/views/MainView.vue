@@ -36,6 +36,7 @@
       @select-channel="(id) => { selectChannel(id); sidebarOpen = false }"
       @channel-info="handleChannelInfo"
       @settings="showSettings = true"
+      @close="sidebarOpen = false"
     />
     
     <!-- Main Content -->
@@ -600,7 +601,7 @@ onMounted(async () => {
 <style scoped>
 .main-view {
   display: flex;
-  height: 100vh;
+  height: var(--vh-dynamic, 100vh);
   background: #ffffff;
 }
 
@@ -642,20 +643,34 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
+  padding-top: calc(1rem + var(--safe-area-inset-top));
+  padding-left: calc(1rem + var(--safe-area-inset-left));
+  padding-right: calc(1rem + var(--safe-area-inset-right));
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 500; /* Higher than sidebar to prevent conflicts */
 }
 
 .mobile-menu-button,
 .mobile-search-button {
   background: none;
   border: none;
-  padding: 0.5rem;
+  padding: 0.75rem;
   cursor: pointer;
   color: #6b7280;
+  min-height: 2.75rem; /* 44px minimum for iOS */
+  min-width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* iOS-specific optimizations */
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .mobile-menu-button:hover,
@@ -685,7 +700,7 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .main-view {
     flex-direction: column;
-    height: 100vh;
+    height: var(--vh-dynamic, 100vh);
   }
   
   .mobile-header {
@@ -697,10 +712,10 @@ onMounted(async () => {
     position: fixed;
     top: 0;
     left: 0;
-    height: 100vh;
+    height: var(--vh-dynamic, 100vh);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    z-index: 300;
+    z-index: 400; /* Lower than mobile header but higher than overlay */
   }
   
   .sidebar.sidebar-open {
@@ -714,6 +729,7 @@ onMounted(async () => {
   .main-content {
     flex: 1;
     overflow: hidden;
+    padding-top: calc(4rem + var(--safe-area-inset-top)); /* Account for fixed header height */
   }
   
   .chat-container {

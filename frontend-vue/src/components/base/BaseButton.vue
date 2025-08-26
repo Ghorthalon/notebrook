@@ -65,6 +65,12 @@ const handleKeydown = (event: KeyboardEvent) => {
   transition: all 0.2s ease;
   outline: none;
   text-decoration: none;
+  /* iOS-specific optimizations */
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .base-button:focus-visible {
@@ -81,16 +87,22 @@ const handleKeydown = (event: KeyboardEvent) => {
 .base-button--sm {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
+  min-height: 2.75rem; /* 44px minimum for iOS touch targets */
+  min-width: 2.75rem;
 }
 
 .base-button--md {
   padding: 0.75rem 1rem;
   font-size: 1rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
 }
 
 .base-button--lg {
   padding: 1rem 1.5rem;
   font-size: 1.125rem;
+  min-height: 3rem;
+  min-width: 3rem;
 }
 
 /* Variants */

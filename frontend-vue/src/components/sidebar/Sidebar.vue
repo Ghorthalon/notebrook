@@ -1,15 +1,28 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar__header">
-      <h1 class="sidebar__title">Notebrook</h1>
-      <BaseButton
-        variant="ghost"
-        size="sm"
-        @click="$emit('create-channel')"
-        aria-label="Create new channel"
-      >
-        +
-      </BaseButton>
+      <div class="sidebar__header-left">
+        <h1 class="sidebar__title">Notebrook</h1>
+      </div>
+      <div class="sidebar__header-right">
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          @click="$emit('create-channel')"
+          aria-label="Create new channel"
+        >
+          +
+        </BaseButton>
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          class="sidebar__close-button"
+          @click="$emit('close')"
+          aria-label="Close sidebar"
+        >
+          ✕
+        </BaseButton>
+      </div>
     </div>
     
     <div class="sidebar__content">
@@ -53,6 +66,7 @@ defineEmits<{
   'select-channel': [channelId: number]
   'channel-info': [channel: Channel]
   'settings': []
+  'close': []
 }>()
 </script>
 
@@ -76,6 +90,17 @@ defineEmits<{
   flex-shrink: 0;
 }
 
+.sidebar__header-left {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar__header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .sidebar__title {
   margin: 0;
   font-size: 1.25rem;
@@ -97,6 +122,10 @@ defineEmits<{
   display: flex;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.sidebar__close-button {
+  display: none; /* Hidden by default on desktop */
 }
 
 /* Dark mode */
@@ -129,10 +158,15 @@ defineEmits<{
   
   .sidebar__header {
     padding: 1rem;
+    padding-top: calc(1rem + var(--safe-area-inset-top));
   }
   
   .sidebar__title {
     font-size: 1.125rem;
+  }
+  
+  .sidebar__close-button {
+    display: inline-flex; /* Show on mobile */
   }
 }
 </style>

@@ -160,6 +160,10 @@ defineExpose({
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem 0;
+  /* iOS-specific scroll optimizations */
+  -webkit-overflow-scrolling: touch;
+  -webkit-scroll-behavior: smooth;
+  scroll-behavior: smooth;
 }
 
 

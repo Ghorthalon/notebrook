@@ -76,6 +76,7 @@ defineExpose({
 <style scoped>
 .message-input-container {
   padding: 1rem;
+  padding-bottom: calc(1rem + var(--safe-area-inset-bottom));
   background: white;
   border-top: 1px solid #e5e7eb;
 }
