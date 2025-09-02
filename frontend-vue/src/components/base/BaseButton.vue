@@ -24,7 +24,7 @@
 interface Props {
   type?: 'button' | 'submit' | 'reset'
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   disabled?: boolean
   loading?: boolean
   ariaLabel?: string
@@ -84,6 +84,13 @@ const handleKeydown = (event: KeyboardEvent) => {
 }
 
 /* Sizes */
+.base-button--xs {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  min-height: 2.25rem; /* 36px - smaller but still usable */
+  min-width: 2.25rem;
+}
+
 .base-button--sm {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -144,6 +151,13 @@ const handleKeydown = (event: KeyboardEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Adjust xs ghost buttons for better emoji display */
+.base-button--ghost.base-button--xs {
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  padding: 0.25rem; /* Tighter padding for emoji buttons */
 }
 
 .base-button--ghost:hover:not(:disabled) {

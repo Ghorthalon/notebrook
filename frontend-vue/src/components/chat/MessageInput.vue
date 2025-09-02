@@ -84,8 +84,33 @@ defineExpose({
 .message-input {
   display: flex;
   align-items: flex-end;
-  gap: 0.75rem;
+  gap: 0.5rem; /* Reduced gap to save space */
   max-width: 100%;
+}
+
+.message-input :deep(.base-textarea) {
+  flex: 1; /* Take all available space */
+  min-width: 200px; /* Ensure minimum usable width */
+}
+
+.message-input :deep(.input-actions) {
+  flex-shrink: 0; /* Don't allow action buttons to shrink */
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .message-input-container {
+    padding: 0.75rem; /* Slightly less padding on very small screens */
+  }
+  
+  .message-input :deep(.base-textarea) {
+    min-width: 150px; /* Allow smaller minimum width on mobile */
+  }
+  
+  /* Ensure buttons remain accessible on small screens */
+  .message-input :deep(.input-actions) {
+    gap: 0.125rem; /* Even tighter gap on mobile */
+  }
 }
 
 /* Dark mode */

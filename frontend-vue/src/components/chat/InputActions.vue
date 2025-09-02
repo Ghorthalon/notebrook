@@ -2,7 +2,7 @@
   <div class="input-actions">
     <BaseButton
       variant="ghost"
-      size="sm"
+      size="xs"
       @click="$emit('file-upload')"
       aria-label="Upload file"
       :disabled="disabled"
@@ -12,7 +12,7 @@
     
     <BaseButton
       variant="ghost"
-      size="sm"
+      size="xs"
       @click="$emit('camera')"
       aria-label="Take photo"
       :disabled="disabled"
@@ -22,7 +22,7 @@
     
     <BaseButton
       variant="ghost"
-      size="sm"
+      size="xs"
       @click="$emit('voice')"
       aria-label="Record voice message"
       :disabled="disabled"
@@ -67,7 +67,7 @@ defineEmits<{
 .input-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem; /* Reduced gap to save space */
   flex-shrink: 0;
 }
 </style>
