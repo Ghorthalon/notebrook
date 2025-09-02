@@ -99,7 +99,7 @@ onMounted(() => {
 
 <style scoped>
 .auth-view {
-  height: 100vh;
+  height: var(--vh-dynamic, 100vh);
   display: flex;
   align-items: center;
   justify-content: center;

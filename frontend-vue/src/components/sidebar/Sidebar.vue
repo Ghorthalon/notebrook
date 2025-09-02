@@ -77,7 +77,7 @@ defineEmits<{
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: var(--vh-dynamic, 100vh);
 }
 
 .sidebar__header {

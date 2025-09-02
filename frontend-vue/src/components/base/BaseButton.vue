@@ -138,6 +138,12 @@ const handleKeydown = (event: KeyboardEvent) => {
 .base-button--ghost {
   background-color: transparent;
   color: #646cff;
+  /* Ensure ghost buttons always meet minimum touch targets */
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .base-button--ghost:hover:not(:disabled) {

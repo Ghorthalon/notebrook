@@ -714,12 +714,14 @@ onMounted(async () => {
     left: 0;
     height: var(--vh-dynamic, 100vh);
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, visibility 0.3s ease;
     z-index: 400; /* Lower than mobile header but higher than overlay */
+    visibility: hidden; /* Completely hide when closed */
   }
   
   .sidebar.sidebar-open {
     transform: translateX(0);
+    visibility: visible;
   }
   
   .sidebar-overlay {
@@ -729,7 +731,7 @@ onMounted(async () => {
   .main-content {
     flex: 1;
     overflow: hidden;
-    padding-top: calc(4rem + var(--safe-area-inset-top)); /* Account for fixed header height */
+    padding-top: var(--header-total-height); /* Account for fixed header height with safe area */
   }
   
   .chat-container {

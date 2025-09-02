@@ -7,9 +7,18 @@
   
   /* Dynamic viewport height that accounts for iOS Safari UI changes */
   --vh-actual: 100vh;
+  --vh-small: 100vh; /* Fallback for browsers without svh support */
+  --vh-large: 100vh; /* Fallback for browsers without lvh support */
+  --vh-dynamic: 100vh; /* Fallback for browsers without dvh support */
+  
+  /* Use newer viewport units where supported */
   --vh-small: 100svh; /* Small viewport height - excludes browser UI */
   --vh-large: 100lvh; /* Large viewport height - includes browser UI */
   --vh-dynamic: 100dvh; /* Dynamic viewport height - changes with browser UI */
+  
+  /* Header height calculations */
+  --header-base-height: 4rem; /* Base header height */
+  --header-total-height: calc(var(--header-base-height) + var(--safe-area-inset-top, 0px));
 }
 
 /* Minimal reset styles only */
@@ -45,21 +54,22 @@ body {
 
 /* iOS-specific touch and interaction optimizations */
 * {
-  /* Disable callouts and text selection on iOS for better touch interactions */
+  /* Disable callouts on iOS for better touch interactions */
   -webkit-touch-callout: none;
+  /* Enable momentum scrolling globally for iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable text selection only on UI elements, not form elements */
+button, [role="button"], .no-select {
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Allow text selection for content areas */
-input, textarea, [contenteditable="true"], .allow-select {
+/* Ensure text selection works in content and form areas */
+input, textarea, [contenteditable="true"], .allow-select, p, span, div:not([role]), article, section {
   -webkit-user-select: text;
   user-select: text;
-}
-
-/* Enable momentum scrolling globally for iOS */
-* {
-  -webkit-overflow-scrolling: touch;
 }
 
 /* Accessibility helpers */

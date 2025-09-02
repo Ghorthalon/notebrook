@@ -25,7 +25,7 @@ const toastStore = useToastStore()
 
 <style>
 #app {
-  height: 100vh;
+  height: var(--vh-dynamic, 100vh);
   width: 100vw;
   overflow: hidden;
 }
