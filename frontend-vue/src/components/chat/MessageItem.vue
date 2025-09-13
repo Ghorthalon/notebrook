@@ -6,11 +6,12 @@
     ]"
     ref="rootEl"
     :data-message-id="message.id"
-    :tabindex="tabindex || -1"
+    :tabindex="tabindex ?? -1"
     :aria-label="messageAriaLabel"
     role="option"
     @keydown="handleKeydown"
     @click="handleClick"
+    @focus="handleFocus"
   >
     <div class="message__content">
       {{ message.content }}
@@ -53,6 +54,7 @@ interface Props {
 
 const emit = defineEmits<{
   'open-dialog': [message: ExtendedMessage | UnsentMessage]
+  'focus': []
 }>()
 
 const props = withDefaults(defineProps<Props>(), {
@@ -260,14 +262,6 @@ const handleDelete = async () => {
       }
       throw error
     }
-    // focus the closest message
-    await nextTick()
-    if (targetToFocus && document.contains(targetToFocus)) {
-      if (!targetToFocus.hasAttribute('tabindex')) targetToFocus.setAttribute('tabindex', '-1')
-      targetToFocus.focus()
-    } else {
-      focusFallbackToInput()
-    }
     
   } catch (error) {
     console.error('Failed to delete message:', error)
@@ -358,3 +352,7 @@ const handleDelete = async () => {
   }
 }
 </style>
+const handleFocus = () => {
+  // Emit a focus event so the parent list can update its focused index
+  emit('focus')
+}

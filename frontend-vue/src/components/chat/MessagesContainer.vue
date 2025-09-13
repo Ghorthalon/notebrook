@@ -1,5 +1,5 @@
 <template>
-  <div class="messages-container" ref="containerRef" @keydown="handleKeydown" tabindex="0" role="listbox"
+  <div class="messages-container" ref="containerRef" @keydown="handleKeydown" @focusin="handleFocusIn" tabindex="-1" role="listbox"
     :aria-label="messagesAriaLabel">
     <div class="messages" role="presentation">
       <!-- Regular Messages -->
@@ -12,6 +12,7 @@
       <!-- Unsent Messages -->
       <MessageItem v-for="(unsentMsg, index) in unsentMessages" :key="unsentMsg.id" :message="unsentMsg"
         :is-unsent="true" :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
+        :aria-selected="(messages.length + index) === focusedMessageIndex ? 'true' : 'false'"
         :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index" 
         @open-dialog="emit('open-message-dialog', $event)" />
     </div>
@@ -62,27 +63,30 @@ const navigationHint = 'Use arrow keys to navigate, Page Up/Down to jump 10 mess
 const handleKeydown = (event: KeyboardEvent) => {
   if (totalMessages.value === 0) return
 
-  let newIndex = focusedMessageIndex.value
+  // Derive current index from actual focused DOM if possible
+  const activeIdx = getActiveMessageIndex()
+  let currentIndex = activeIdx != null ? activeIdx : focusedMessageIndex.value
+  let newIndex = currentIndex
 
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault()
-      newIndex = Math.max(0, focusedMessageIndex.value - 1)
+      newIndex = Math.max(0, currentIndex - 1)
       break
 
     case 'ArrowDown':
       event.preventDefault()
-      newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 1)
+      newIndex = Math.min(totalMessages.value - 1, currentIndex + 1)
       break
 
     case 'PageUp':
       event.preventDefault()
-      newIndex = Math.max(0, focusedMessageIndex.value - 10)
+      newIndex = Math.max(0, currentIndex - 10)
       break
 
     case 'PageDown':
       event.preventDefault()
-      newIndex = Math.min(totalMessages.value - 1, focusedMessageIndex.value + 10)
+      newIndex = Math.min(totalMessages.value - 1, currentIndex + 10)
       break
 
     case 'Home':
@@ -107,6 +111,19 @@ const handleKeydown = (event: KeyboardEvent) => {
 
   if (newIndex !== focusedMessageIndex.value) {
     focusMessage(newIndex)
+  }
+}
+
+const handleFocusIn = (event: FocusEvent) => {
+  const target = event.target as HTMLElement | null
+  if (!target) return
+  const el = target.closest('[data-message-index]') as HTMLElement | null
+  if (!el) return
+  const idxAttr = el.getAttribute('data-message-index')
+  if (idxAttr == null) return
+  const idx = parseInt(idxAttr, 10)
+  if (!Number.isNaN(idx) && idx !== focusedMessageIndex.value) {
+    focusedMessageIndex.value = idx
   }
 }
 
@@ -136,6 +153,29 @@ const focusMessageById = (messageId: string | number) => {
   }
 }
 
+const isNearBottom = (threshold = 48) => {
+  const el = containerRef.value
+  if (!el) return true
+  const distance = el.scrollHeight - el.scrollTop - el.clientHeight
+  return distance <= threshold
+}
+
+const isInputActive = () => {
+  const active = document.activeElement as HTMLElement | null
+  if (!active) return false
+  // Keep focus on the message composer when typing/sending
+  return !!active.closest('.message-input') && active.classList.contains('base-textarea__field')
+}
+
+const getActiveMessageIndex = (): number | null => {
+  const active = document.activeElement as HTMLElement | null
+  if (!active) return null
+  const el = active.closest('[data-message-index]') as HTMLElement | null
+  if (!el) return null
+  const idx = el.getAttribute('data-message-index')
+  return idx != null ? parseInt(idx, 10) : null
+}
+
 const scrollToBottom = () => {
   nextTick(() => {
     if (containerRef.value) {
@@ -144,19 +184,46 @@ const scrollToBottom = () => {
   })
 }
 
-// Watch for new messages and auto-scroll
-watch(() => [props.messages.length, props.unsentMessages.length], () => {
-  // When new messages arrive, focus the last message and scroll to bottom
-  if (totalMessages.value > 0) {
-    focusedMessageIndex.value = totalMessages.value - 1
+// Watch for list length changes
+// - If items were added, move focus to the newest and scroll to bottom.
+// - If items were removed, keep current index when possible; otherwise clamp.
+watch(
+  () => [props.messages.length, props.unsentMessages.length],
+  ([newM, newU], [oldM = 0, oldU = 0]) => {
+    const oldTotal = (oldM ?? 0) + (oldU ?? 0)
+    const newTotal = (newM ?? 0) + (newU ?? 0)
+
+    if (newTotal > oldTotal) {
+      // New message(s) appended: only jump if user is near bottom and not typing
+      const shouldStickToBottom = isNearBottom() || focusedMessageIndex.value === oldTotal - 1
+      if (shouldStickToBottom && newTotal > 0) {
+        if (isInputActive()) {
+          // Preserve input focus; optionally keep scroll at bottom
+          scrollToBottom()
+        } else {
+          focusMessage(newTotal - 1)
+          scrollToBottom()
+        }
+      }
+    }
+    // For deletions, defer to the totalMessages watcher below to clamp and focus
   }
-  scrollToBottom()
-})
+)
 
 // Reset focus when messages change significantly
-watch(() => totalMessages.value, (newTotal) => {
-  if (focusedMessageIndex.value >= newTotal) {
-    focusedMessageIndex.value = Math.max(0, newTotal - 1)
+watch(() => totalMessages.value, (newTotal, oldTotal) => {
+  if (newTotal === 0) return
+  if (isInputActive()) return
+  const current = focusedMessageIndex.value
+  let nextIndex = current
+  if (current >= newTotal) {
+    // If we deleted the last item, move to the new last
+    nextIndex = Math.max(0, newTotal - 1)
+  }
+  // Avoid double focusing if the correct item is already focused
+  const activeIdx = getActiveMessageIndex()
+  if (activeIdx !== nextIndex) {
+    focusMessage(nextIndex)
   }
 })
 
@@ -164,7 +231,7 @@ onMounted(() => {
   scrollToBottom()
   // Focus the last message on mount
   if (totalMessages.value > 0) {
-    focusedMessageIndex.value = totalMessages.value - 1
+    focusMessage(totalMessages.value - 1)
   }
 })
 
