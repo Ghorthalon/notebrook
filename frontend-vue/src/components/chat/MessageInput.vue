@@ -17,6 +17,7 @@
         @file-upload="$emit('file-upload')"
         @camera="$emit('camera')"
         @voice="$emit('voice')"
+        @toggle-check="$emit('toggle-check')"
         @send="handleSubmit"
       />
     </div>
@@ -35,6 +36,7 @@ const emit = defineEmits<{
   'file-upload': []
   'camera': []
   'voice': []
+  'toggle-check': []
 }>()
 
 const appStore = useAppStore()

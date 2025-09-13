@@ -9,6 +9,7 @@ export interface Message {
     channel_id: number;
     content: string;
     created_at: string;
+    checked?: boolean | null;
 }
 
 export interface File {

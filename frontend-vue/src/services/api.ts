@@ -118,6 +118,13 @@ class ApiService {
     })
   }
 
+  async setMessageChecked(channelId: number, messageId: number, checked: boolean | null): Promise<{ id: number, checked: boolean | null }> {
+    return this.request(`/channels/${channelId}/messages/${messageId}/checked`, {
+      method: 'PUT',
+      body: JSON.stringify({ checked })
+    })
+  }
+
   async moveMessage(channelId: number, messageId: number, targetChannelId: number): Promise<{ message: string, messageId: number, targetChannelId: number }> {
     return this.request(`/channels/${channelId}/messages/${messageId}/move`, {
       method: 'PUT',

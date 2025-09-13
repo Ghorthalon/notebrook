@@ -78,3 +78,18 @@ export const moveMessage = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to move message' });
     }
 }
+
+export const setChecked = async (req: Request, res: Response) => {
+    const { messageId } = req.params;
+    const { checked } = req.body as { checked: boolean | null | undefined };
+    if (!messageId) {
+        return res.status(400).json({ error: 'Message ID is required' });
+    }
+    const value = (checked === undefined) ? null : checked;
+    const result = await MessageService.setMessageChecked(messageId, value);
+    if (result.changes === 0) {
+        return res.status(404).json({ error: 'Message not found' });
+    }
+    logger.info(`Message ${messageId} checked set to ${value}`);
+    res.json({ id: parseInt(messageId), checked: value });
+}

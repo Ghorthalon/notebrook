@@ -11,6 +11,7 @@ export interface Message {
   content: string
   created_at: string
   file_id?: number
+  checked?: boolean | null
 }
 
 export interface MessageWithFile extends Message {

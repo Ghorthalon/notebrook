@@ -14,6 +14,8 @@
     @focus="handleFocus"
   >
     <div class="message__content">
+      <span v-if="isChecked === true" class="message__check" aria-hidden="true">✔</span>
+      <span v-else-if="isChecked === false" class="message__check message__check--unchecked" aria-hidden="true">☐</span>
       {{ message.content }}
     </div>
     
@@ -23,6 +25,16 @@
     </div>
     
     <div class="message__meta">
+      <button
+        class="message__toggle"
+        type="button"
+        :aria-label="toggleAriaLabel"
+        @click.stop="toggleChecked()"
+      >
+        <span v-if="isChecked === true">Uncheck</span>
+        <span v-else-if="isChecked === false">Check</span>
+        <span v-else>Check</span>
+      </button>
       <time 
         v-if="!isUnsent && 'created_at' in message" 
         class="message__time"
@@ -83,6 +95,11 @@ const hasFileAttachment = computed(() => {
   return 'fileId' in props.message && !!props.message.fileId
 })
 
+// Tri-state checked
+const isChecked = computed<boolean | null>(() => {
+  return (props as any).message?.checked ?? null
+})
+
 // Create FileAttachment object from flattened message data
 const fileAttachment = computed((): FileAttachmentType | null => {
   if (!hasFileAttachment.value || !('fileId' in props.message)) return null
@@ -114,7 +131,15 @@ const fileAttachment = computed((): FileAttachmentType | null => {
 
 // Create comprehensive aria-label for screen readers
 const messageAriaLabel = computed(() => {
+  let prefix = ''
   let label = ''
+
+  // Checked state first
+  if ((props as any).message?.checked === true) {
+    prefix = 'checked, '
+  } else if ((props as any).message?.checked === false) {
+    prefix = 'unchecked, '
+  }
   
   // Add message content
   if (props.message.content) {
@@ -139,7 +164,7 @@ const messageAriaLabel = computed(() => {
     label += '. Message is sending'
   }
   
-  return label
+  return `${prefix}${label}`.trim()
 })
 
 // Helper to determine file type for better description
@@ -172,6 +197,12 @@ const handleClick = () => {
 const handleKeydown = (event: KeyboardEvent) => {
   // Don't interfere with normal keyboard shortcuts (Ctrl+C, Ctrl+V, etc.)
   if (event.ctrlKey || event.metaKey || event.altKey) {
+    return
+  }
+  if (event.key === ' ' || event.code === 'Space') {
+    event.preventDefault()
+    event.stopPropagation()
+    toggleChecked()
     return
   }
   
@@ -268,6 +299,33 @@ const handleDelete = async () => {
     toastStore.error('Failed to delete message')
   }
 }
+const handleFocus = () => {
+  // Keep parent selection index in sync
+  emit('focus')
+}
+
+const toggleAriaLabel = computed(() => {
+  if (isChecked.value === true) return 'Mark as unchecked'
+  if (isChecked.value === false) return 'Mark as checked'
+  return 'Mark as checked'
+})
+
+const toggleChecked = async () => {
+  if (props.isUnsent) return
+  const msg = props.message as ExtendedMessage
+  const next = isChecked.value !== true
+  const prev = isChecked.value
+  try {
+    // optimistic
+    appStore.setMessageChecked(msg.id, next)
+    await apiService.setMessageChecked(msg.channel_id, msg.id, next)
+  } catch (e) {
+    // rollback
+    appStore.setMessageChecked(msg.id, prev as any)
+    console.error('Failed to set checked state', e)
+  }
+}
+
 </script>
 
 <style scoped>
@@ -330,6 +388,31 @@ const handleDelete = async () => {
   font-weight: 500;
 }
 
+.message__check {
+  margin-right: 6px;
+  color: #059669;
+  font-weight: 600;
+}
+
+.message__check--unchecked {
+  color: #6b7280;
+}
+
+.message__toggle {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+/* Hide the per-message toggle on desktop; show only on mobile */
+.message__toggle { display: none; }
+@media (max-width: 480px) {
+  .message__toggle { display: inline-flex; }
+}
+
 @media (prefers-color-scheme: dark) {
   .message {
     background: #2d3748;
@@ -352,7 +435,4 @@ const handleDelete = async () => {
   }
 }
 </style>
-const handleFocus = () => {
-  // Emit a focus event so the parent list can update its focused index
-  emit('focus')
-}
+ 

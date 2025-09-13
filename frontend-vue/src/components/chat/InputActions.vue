@@ -31,6 +31,16 @@
     </BaseButton>
     
     <BaseButton
+      variant="ghost"
+      size="xs"
+      @click="$emit('toggle-check')"
+      aria-label="Toggle check on focused message"
+      :disabled="disabled"
+    >
+      ✓
+    </BaseButton>
+    
+    <BaseButton
       variant="primary"
       size="sm"
       @click="$emit('send')"
@@ -59,6 +69,7 @@ defineEmits<{
   'file-upload': []
   'camera': []
   'voice': []
+  'toggle-check': []
   'send': []
 }>()
 </script>
@@ -69,5 +80,11 @@ defineEmits<{
   align-items: center;
   gap: 0.25rem; /* Reduced gap to save space */
   flex-shrink: 0;
+}
+
+/* Mobile-only for the checked toggle button */
+.input-actions [aria-label="Toggle check on focused message"] { display: none; }
+@media (max-width: 480px) {
+  .input-actions [aria-label="Toggle check on focused message"] { display: inline-flex; }
 }
 </style>

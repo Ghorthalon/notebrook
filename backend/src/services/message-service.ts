@@ -2,7 +2,7 @@ import { db, FTS5Enabled } from "../db";
 import { events } from "../globals";
 
 export const createMessage = async (channelId: string, content: string) => {
-  const query = db.prepare(`INSERT INTO messages (channelId, content) VALUES ($channelId, $content)`);
+  const query = db.prepare(`INSERT INTO messages (channelId, content, checked) VALUES ($channelId, $content, NULL)`);
   const result = query.run({ channelId: channelId, content: content });
 
   const messageId = result.lastInsertRowid;
@@ -49,7 +49,7 @@ export const deleteMessage = async (messageId: string) => {
 export const getMessages = async (channelId: string) => {
   const query = db.prepare(`
         SELECT 
-          messages.id, messages.channelId, messages.content, messages.createdAt,
+          messages.id, messages.channelId, messages.content, messages.createdAt, messages.checked,
           files.id as fileId, files.filePath, files.fileType, files.createdAt as fileCreatedAt, files.originalName, files.fileSize
         FROM 
           messages
@@ -67,7 +67,7 @@ export const getMessages = async (channelId: string) => {
 export const getMessage = async (id: string) => {
   const query = db.prepare(`
         SELECT 
-          messages.id, messages.channelId, messages.content, messages.createdAt,
+          messages.id, messages.channelId, messages.content, messages.createdAt, messages.checked,
           files.id as fileId, files.filePath, files.fileType, files.createdAt as fileCreatedAt, files.originalName, files.fileSize
         FROM 
           messages
@@ -80,6 +80,15 @@ export const getMessage = async (id: string) => {
       `);
   const row = query.get({ id: id });
   return row;
+}
+
+export const setMessageChecked = async (messageId: string, checked: boolean | null) => {
+  const query = db.prepare(`UPDATE messages SET checked = $checked WHERE id = $id`);
+  // SQLite stores booleans as integers; NULL for unknown
+  const value = checked === null ? null : (checked ? 1 : 0);
+  const result = query.run({ id: messageId, checked: value });
+  events.emit('message-updated', messageId, { checked: value });
+  return result;
 }
 
 export const moveMessage = async (messageId: string, targetChannelId: string) => {

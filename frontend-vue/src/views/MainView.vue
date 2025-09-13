@@ -63,6 +63,7 @@
           @file-upload="showFileDialog = true"
           @camera="showCameraDialog = true"
           @voice="showVoiceDialog = true"
+          @toggle-check="handleToggleCheckFocused"
           ref="messageInput"
         />
       </div>
@@ -327,6 +328,19 @@ const setupKeyboardShortcuts = () => {
     altKey: true,
     handler: () => announceLastMessage(10)
   })
+}
+
+const handleToggleCheckFocused = async () => {
+  const focused = messagesContainer.value?.getFocusedMessage?.()
+  if (!focused || 'channelId' in focused) return
+  try {
+    const next = (focused as ExtendedMessage).checked !== true
+    appStore.setMessageChecked((focused as ExtendedMessage).id, next)
+    await apiService.setMessageChecked((focused as ExtendedMessage).channel_id, (focused as ExtendedMessage).id, next)
+    toastStore.info(next ? 'Marked as checked' : 'Marked as unchecked')
+  } catch (e) {
+    toastStore.error('Failed to toggle check')
+  }
 }
 
 const selectChannel = async (channelId: number) => {

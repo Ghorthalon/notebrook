@@ -101,6 +101,10 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const setMessageChecked = (messageId: number, checked: boolean | null) => {
+    updateMessage(messageId, { checked })
+  }
+
   const removeMessage = (messageId: number) => {
     for (const channelId in messages.value) {
       const channelMessages = messages.value[parseInt(channelId)]
@@ -210,6 +214,7 @@ export const useAppStore = defineStore('app', () => {
     setMessages,
     addMessage,
     updateMessage,
+    setMessageChecked,
     removeMessage,
     moveMessage,
     addUnsentMessage,

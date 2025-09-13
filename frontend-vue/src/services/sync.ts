@@ -35,6 +35,7 @@ export class SyncService {
             content: msg.content,
             created_at: msg.createdAt || msg.created_at,
             file_id: msg.fileId || msg.file_id,
+            checked: typeof msg.checked === 'number' ? (msg.checked === 1) : (typeof msg.checked === 'boolean' ? msg.checked : null),
             // Map the flattened file fields from backend
             fileId: msg.fileId,
             filePath: msg.filePath,

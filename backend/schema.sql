@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS messages (
   channelId INTEGER,
   content TEXT,
   fileId INTEGER NULL,
+  checked INTEGER NULL,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (channelId) REFERENCES channels (id) ON DELETE CASCADE,
   FOREIGN KEY (fileId) REFERENCES files (id) ON DELETE
