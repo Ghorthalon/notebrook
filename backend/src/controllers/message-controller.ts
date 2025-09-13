@@ -86,10 +86,12 @@ export const setChecked = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Message ID is required' });
     }
     const value = (checked === undefined) ? null : checked;
-    const result = await MessageService.setMessageChecked(messageId, value);
-    if (result.changes === 0) {
+    // Ensure message exists; treat no-change updates as success
+    const existing = await MessageService.getMessage(messageId);
+    if (!existing) {
         return res.status(404).json({ error: 'Message not found' });
     }
+    await MessageService.setMessageChecked(messageId, value);
     logger.info(`Message ${messageId} checked set to ${value}`);
     res.json({ id: parseInt(messageId), checked: value });
 }
