@@ -46,7 +46,9 @@ const emit = defineEmits<{
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault()
-    emit('click', event as any)
+    const btn = event.currentTarget as HTMLButtonElement | null
+    // Trigger native click so type="submit" works and parent @click receives it
+    btn?.click()
   }
 }
 </script>

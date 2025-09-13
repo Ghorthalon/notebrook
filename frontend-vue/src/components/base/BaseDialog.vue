@@ -16,6 +16,7 @@
             'dialog',
             `dialog--${size}`
           ]"
+          tabindex="-1"
           @click.stop
         >
           <div class="dialog__header" v-if="$slots.header || title">
@@ -87,6 +88,12 @@ const handleOverlayClick = () => {
 let lastFocusedElement: HTMLElement | null = null
 
 const trapFocus = (event: KeyboardEvent) => {
+  // Close on Escape regardless of focused element when dialog is open
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    handleClose()
+    return
+  }
   if (event.key !== 'Tab') return
   
   const focusableElements = dialogRef.value?.querySelectorAll(
@@ -119,16 +126,24 @@ watch(() => props.show, async (isVisible) => {
     
     await nextTick()
     
-    // Focus first focusable element or the dialog itself
-    const firstFocusable = dialogRef.value?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    ) as HTMLElement
-    
+    // Focus [autofocus] first, then first focusable, else the dialog itself
+    const root = dialogRef.value as HTMLElement | undefined
+    const selector = '[autofocus], button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const firstFocusable = root?.querySelector(selector) as HTMLElement | null
     if (firstFocusable) {
       firstFocusable.focus()
     } else {
-      dialogRef.value?.focus()
+      root?.focus()
     }
+
+    // Retry shortly after in case slotted children mount slightly later
+    setTimeout(() => {
+      if (!root) return
+      if (!root.contains(document.activeElement)) {
+        const retryTarget = (root.querySelector(selector) as HTMLElement) || root
+        retryTarget?.focus()
+      }
+    }, 0)
   } else {
     document.body.style.overflow = ''
     document.removeEventListener('keydown', trapFocus)

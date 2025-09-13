@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { DB_PATH } from './config';
 import { logger } from './globals';
 import { readdir, readFile } from "fs/promises";
+import { existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 
 export let FTS5Enabled = true;
@@ -56,6 +57,18 @@ export const migrate = async () => {
 }
 
 logger.info(`Loading database at ${DB_PATH}`);
+
+// Ensure parent directory exists (avoid better-sqlite3 directory error)
+try {
+  const dir = dirname(DB_PATH);
+  // Skip if dir is current directory or drive root-like (e.g., "C:")
+  const isTrivialDir = dir === '.' || dir === '' || /^[A-Za-z]:\\?$/.test(dir);
+  if (!isTrivialDir && !existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+} catch (e) {
+  logger.warn(`Failed to ensure DB directory exists: ${e}`);
+}
 
 export const db = new Database(DB_PATH);
 
