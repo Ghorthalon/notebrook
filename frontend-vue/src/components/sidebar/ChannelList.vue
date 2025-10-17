@@ -40,6 +40,11 @@ const props = defineProps<Props>()
 const containerRef = ref<HTMLElement>()
 const focusedChannelIndex = ref(0)
 
+// For alphanumeric navigation
+const lastSearchChar = ref('')
+const lastSearchTime = ref(0)
+const searchResetDelay = 1000 // Reset after 1 second
+
 // Handle individual channel events
 const handleChannelSelect = (channelId: number) => {
   emit('select-channel', channelId)
@@ -101,8 +106,15 @@ const handleChannelKeydown = (event: KeyboardEvent, channelIndex: number) => {
         return
       }
       break
-      
+
     default:
+      // Handle alphanumeric navigation (a-z, 0-9)
+      const char = event.key.toLowerCase()
+      if (/^[a-z0-9]$/.test(char)) {
+        event.preventDefault()
+        handleAlphanumericNavigation(char, channelIndex)
+        return
+      }
       return
   }
   
@@ -120,6 +132,41 @@ const focusChannel = (index: number) => {
       buttonElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   })
+}
+
+const handleAlphanumericNavigation = (char: string, currentIndex: number) => {
+  if (props.channels.length === 0) return
+
+  const now = Date.now()
+  const sameChar = lastSearchChar.value === char && (now - lastSearchTime.value) < searchResetDelay
+
+  lastSearchChar.value = char
+  lastSearchTime.value = now
+
+  // Find channels starting with the character
+  const matchingIndices: number[] = []
+  props.channels.forEach((channel, index) => {
+    if (channel.name.toLowerCase().startsWith(char)) {
+      matchingIndices.push(index)
+    }
+  })
+
+  if (matchingIndices.length === 0) return
+
+  // If pressing the same character repeatedly, cycle through matches
+  if (sameChar) {
+    // Find the next match after current index
+    const nextMatch = matchingIndices.find(index => index > currentIndex)
+    if (nextMatch !== undefined) {
+      focusChannel(nextMatch)
+    } else {
+      // Wrap around to the first match
+      focusChannel(matchingIndices[0])
+    }
+  } else {
+    // New character: jump to first match
+    focusChannel(matchingIndices[0])
+  }
 }
 
 

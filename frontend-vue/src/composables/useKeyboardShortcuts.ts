@@ -42,10 +42,11 @@ export function useKeyboardShortcuts() {
 
     if (shortcut) {
       // Allow certain shortcuts to work globally, even in input fields
-      const isGlobalShortcut = (shortcut.ctrlKey && shortcut.shiftKey) || 
-                              shortcut.altKey || 
-                              shortcut.key === 'escape'
-      
+      const isGlobalShortcut = (shortcut.ctrlKey && shortcut.shiftKey) ||
+                              shortcut.altKey ||
+                              shortcut.key === 'escape' ||
+                              (shortcut.ctrlKey && shortcut.key === 'k')
+
       // Skip shortcuts that shouldn't work in input fields
       if (isInInputField && !isGlobalShortcut) {
         return

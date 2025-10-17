@@ -227,11 +227,10 @@ const setupKeyboardShortcuts = () => {
     handler: () => { showSearchDialog.value = true }
   })
   
-  // Ctrl+Shift+C - Channel selector focus
+  // Ctrl+K - Channel selector focus
   addShortcut({
-    key: 'c',
+    key: 'k',
     ctrlKey: true,
-    shiftKey: true,
     handler: () => {
       // Focus the first channel in the list
       const firstChannelButton = document.querySelector('.channel-item button') as HTMLElement
@@ -556,6 +555,15 @@ const handleChannelInfo = (channel: Channel) => {
 const isUnsentMessage = (messageId: string | number): boolean => {
   return typeof messageId === 'string' && messageId.startsWith('unsent_')
 }
+
+// Update document title when channel changes
+watch(() => appStore.currentChannel, (channel) => {
+  if (channel) {
+    document.title = `${channel.name} - Notebrook`
+  } else {
+    document.title = 'Notebrook'
+  }
+}, { immediate: true })
 
 // Initialize
 onMounted(async () => {
