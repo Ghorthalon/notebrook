@@ -6,15 +6,17 @@
       <MessageItem v-for="(message, index) in messages" :key="message.id" :message="message"
         :tabindex="index === focusedMessageIndex ? 0 : -1" :data-message-index="index"
         :aria-selected="index === focusedMessageIndex ? 'true' : 'false'"
-        @focus="focusedMessageIndex = index" 
-        @open-dialog="emit('open-message-dialog', $event)" />
+        @focus="focusedMessageIndex = index"
+        @open-dialog="emit('open-message-dialog', $event)"
+        @open-dialog-edit="emit('open-message-dialog-edit', $event)" />
 
       <!-- Unsent Messages -->
       <MessageItem v-for="(unsentMsg, index) in unsentMessages" :key="unsentMsg.id" :message="unsentMsg"
         :is-unsent="true" :tabindex="(messages.length + index) === focusedMessageIndex ? 0 : -1"
         :aria-selected="(messages.length + index) === focusedMessageIndex ? 'true' : 'false'"
-        :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index" 
-        @open-dialog="emit('open-message-dialog', $event)" />
+        :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index"
+        @open-dialog="emit('open-message-dialog', $event)"
+        @open-dialog-edit="emit('open-message-dialog-edit', $event)" />
     </div>
   </div>
 </template>
@@ -32,6 +34,7 @@ interface Props {
 const emit = defineEmits<{
   'message-selected': [message: ExtendedMessage | UnsentMessage, index: number]
   'open-message-dialog': [message: ExtendedMessage | UnsentMessage]
+  'open-message-dialog-edit': [message: ExtendedMessage | UnsentMessage]
 }>()
 
 const props = defineProps<Props>()

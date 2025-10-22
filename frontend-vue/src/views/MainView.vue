@@ -55,6 +55,7 @@
           :unsent-messages="appStore.unsentMessagesForChannel"
           ref="messagesContainer"
           @open-message-dialog="handleOpenMessageDialog"
+          @open-message-dialog-edit="handleOpenMessageDialogEdit"
         />
         
         <!-- Message Input -->
@@ -122,11 +123,12 @@
     </BaseDialog>
 
     <BaseDialog v-model:show="showMessageDialog" title="">
-      <MessageDialog 
+      <MessageDialog
         v-if="selectedMessage"
         :message="selectedMessage"
         :open="showMessageDialog"
-        @close="handleCloseMessageDialog" 
+        :start-editing="shouldStartEditing"
+        @close="handleCloseMessageDialog"
         @edit="handleEditMessage"
         @delete="handleDeleteMessage"
         @move="handleMoveMessage"
@@ -197,6 +199,7 @@ const showVoiceDialog = ref(false)
 const showMessageDialog = ref(false)
 const showCameraDialog = ref(false)
 const selectedMessage = ref<ExtendedMessage | null>(null)
+const shouldStartEditing = ref(false)
 
 // Mobile sidebar state
 const sidebarOpen = ref(false)
@@ -460,6 +463,16 @@ const handleOpenMessageDialog = (message: ExtendedMessage | UnsentMessage) => {
   // Only allow dialog for sent messages (ExtendedMessage), not unsent ones
   if ('created_at' in message) {
     selectedMessage.value = message as ExtendedMessage
+    shouldStartEditing.value = false
+    showMessageDialog.value = true
+  }
+}
+
+const handleOpenMessageDialogEdit = (message: ExtendedMessage | UnsentMessage) => {
+  // Only allow dialog for sent messages (ExtendedMessage), not unsent ones
+  if ('created_at' in message) {
+    selectedMessage.value = message as ExtendedMessage
+    shouldStartEditing.value = true
     showMessageDialog.value = true
   }
 }
@@ -467,6 +480,7 @@ const handleOpenMessageDialog = (message: ExtendedMessage | UnsentMessage) => {
 const handleCloseMessageDialog = () => {
   showMessageDialog.value = false
   selectedMessage.value = null
+  shouldStartEditing.value = false
 }
 
 const handleEditMessage = async (messageId: number, content: string) => {

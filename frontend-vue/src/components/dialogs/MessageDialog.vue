@@ -202,6 +202,7 @@ import type { ExtendedMessage } from '@/types'
 interface Props {
   message: ExtendedMessage
   open: boolean
+  startEditing?: boolean
 }
 
 const emit = defineEmits<{
@@ -404,6 +405,11 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
+
+  // Auto-start editing if requested
+  if (props.startEditing) {
+    startEditing()
+  }
 })
 
 // Cleanup on unmount

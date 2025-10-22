@@ -66,6 +66,7 @@ interface Props {
 
 const emit = defineEmits<{
   'open-dialog': [message: ExtendedMessage | UnsentMessage]
+  'open-dialog-edit': [message: ExtendedMessage | UnsentMessage]
   'focus': []
 }>()
 
@@ -211,6 +212,12 @@ const handleKeydown = (event: KeyboardEvent) => {
     navigator.clipboard.writeText(props.message.content)
     playSound('copy')
     toastStore.success('Message copied to clipboard')
+  } else if (event.key === 'e') {
+    // Edit message - open the message dialog in edit mode
+    if (!props.isUnsent) {
+      event.preventDefault()
+      emit('open-dialog-edit', props.message)
+    }
   } else if (event.key === 'r') {
     // Read message aloud (only when no modifiers are pressed)
     if (appStore.settings.ttsEnabled) {
