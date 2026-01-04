@@ -136,8 +136,15 @@ export function useWebSocket() {
     const channels = [...appStore.channels]
     const channelIndex = channels.findIndex(c => c.id === channelId)
     if (channelIndex !== -1) {
-      channels[channelIndex] = { ...channels[channelIndex], name: data.name }
-      appStore.setChannels(channels)
+      const existingChannel = channels[channelIndex]
+      if (existingChannel) {
+        channels[channelIndex] = {
+          id: existingChannel.id,
+          name: data.name,
+          created_at: existingChannel.created_at
+        }
+        appStore.setChannels(channels)
+      }
     }
   }
 

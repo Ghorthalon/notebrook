@@ -141,20 +141,24 @@ const uploadFiles = async () => {
   try {
     // For single file, use the filename as message content
     // For multiple files, show count
-    const messageContent = selectedFiles.value.length === 1 
-      ? selectedFiles.value[0].name 
+    const messageContent = selectedFiles.value.length === 1
+      ? selectedFiles.value[0]?.name || 'Uploaded file'
       : `Uploaded ${selectedFiles.value.length} files`
-      
+
     // Create a message first to attach files to
     const message = await apiService.createMessage(appStore.currentChannelId, messageContent)
-    
+
     // Upload the first file (backend uses single file per message)
     const file = selectedFiles.value[0]
-    
+
+    if (!file) {
+      throw new Error('No file selected')
+    }
+
     try {
       const uploadedFile = await apiService.uploadFile(appStore.currentChannelId, message.id, file)
       uploadProgress.value[0] = 100
-      
+
       // Immediately update the local message with file metadata
       const updatedMessage = {
         ...message,
@@ -165,12 +169,12 @@ const uploadFiles = async () => {
         originalName: uploadedFile.original_name,
         fileCreatedAt: uploadedFile.created_at
       }
-      
+
       // Update the message in the store
       appStore.updateMessage(message.id, updatedMessage)
-      
+
       toastStore.success('File uploaded successfully!')
-      
+
     } catch (fileError) {
       console.error(`Failed to upload ${file.name}:`, fileError)
       toastStore.error(`Failed to upload ${file.name}`)

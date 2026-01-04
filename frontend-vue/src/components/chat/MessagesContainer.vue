@@ -241,7 +241,7 @@ onMounted(() => {
 const getFocusedMessage = (): ExtendedMessage | UnsentMessage | null => {
   const messages = allMessages.value
   if (focusedMessageIndex.value >= 0 && focusedMessageIndex.value < messages.length) {
-    return messages[focusedMessageIndex.value]
+    return messages[focusedMessageIndex.value] ?? null
   }
   return null
 }

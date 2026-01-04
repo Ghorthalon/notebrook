@@ -281,7 +281,10 @@ const performDelete = async () => {
       
       // Switch to first available channel if we were on the deleted channel
       if (appStore.currentChannelId === props.channel.id && appStore.channels.length > 0) {
-        await appStore.setCurrentChannel(appStore.channels[0].id)
+        const firstChannel = appStore.channels[0]
+        if (firstChannel) {
+          await appStore.setCurrentChannel(firstChannel.id)
+        }
       }
     } catch (error) {
       // For delete, we can't do offline fallback easily since it affects server state

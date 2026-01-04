@@ -161,11 +161,17 @@ const handleAlphanumericNavigation = (char: string, currentIndex: number) => {
       focusChannel(nextMatch)
     } else {
       // Wrap around to the first match
-      focusChannel(matchingIndices[0])
+      const firstMatch = matchingIndices[0]
+      if (firstMatch !== undefined) {
+        focusChannel(firstMatch)
+      }
     }
   } else {
     // New character: jump to first match
-    focusChannel(matchingIndices[0])
+    const firstMatch = matchingIndices[0]
+    if (firstMatch !== undefined) {
+      focusChannel(firstMatch)
+    }
   }
 }
 

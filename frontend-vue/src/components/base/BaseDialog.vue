@@ -108,12 +108,12 @@ const trapFocus = (event: KeyboardEvent) => {
   if (event.shiftKey) {
     if (document.activeElement === firstElement) {
       event.preventDefault()
-      lastElement.focus()
+      lastElement?.focus()
     }
   } else {
     if (document.activeElement === lastElement) {
       event.preventDefault()
-      firstElement.focus()
+      firstElement?.focus()
     }
   }
 }

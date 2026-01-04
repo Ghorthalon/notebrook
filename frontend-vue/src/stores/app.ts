@@ -73,11 +73,16 @@ export const useAppStore = defineStore('app', () => {
     }
 
     const channelMessages = messages.value[message.channel_id]
+    if (!channelMessages) return
+
     const existingIndex = channelMessages.findIndex(m => m.id === message.id)
 
     if (existingIndex !== -1) {
       // Upsert: update existing to avoid duplicates from WebSocket vs sync
-      channelMessages[existingIndex] = { ...channelMessages[existingIndex], ...message }
+      const existingMessage = channelMessages[existingIndex]
+      if (existingMessage) {
+        channelMessages[existingIndex] = { ...existingMessage, ...message }
+      }
     } else {
       channelMessages.push(message)
     }
@@ -93,9 +98,14 @@ export const useAppStore = defineStore('app', () => {
   const updateMessage = (messageId: number, updates: Partial<ExtendedMessage>) => {
     for (const channelId in messages.value) {
       const channelMessages = messages.value[parseInt(channelId)]
+      if (!channelMessages) continue
+
       const messageIndex = channelMessages.findIndex(m => m.id === messageId)
       if (messageIndex !== -1) {
-        channelMessages[messageIndex] = { ...channelMessages[messageIndex], ...updates }
+        const existingMessage = channelMessages[messageIndex]
+        if (existingMessage) {
+          channelMessages[messageIndex] = { ...existingMessage, ...updates }
+        }
         break
       }
     }
@@ -108,6 +118,8 @@ export const useAppStore = defineStore('app', () => {
   const removeMessage = (messageId: number) => {
     for (const channelId in messages.value) {
       const channelMessages = messages.value[parseInt(channelId)]
+      if (!channelMessages) continue
+
       const messageIndex = channelMessages.findIndex(m => m.id === messageId)
       if (messageIndex !== -1) {
         channelMessages.splice(messageIndex, 1)
@@ -127,16 +139,23 @@ export const useAppStore = defineStore('app', () => {
     }
     
     const message = sourceMessages[messageIndex]
+    if (!message) {
+      console.warn(`Message ${messageId} not found at index ${messageIndex}`)
+      return
+    }
+
     sourceMessages.splice(messageIndex, 1)
-    
+
     // Update message's channel_id and add to target channel
     const updatedMessage = { ...message, channel_id: targetChannelId }
-    
+
     if (!messages.value[targetChannelId]) {
       messages.value[targetChannelId] = []
     }
-    
+
     const targetMessages = messages.value[targetChannelId]
+    if (!targetMessages) return
+
     targetMessages.push(updatedMessage)
     
     // Keep chronological order in target channel

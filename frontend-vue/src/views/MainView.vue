@@ -443,9 +443,14 @@ const announceLastMessage = (position: number) => {
   }
   
   const message = messages[messageIndex]
+  if (!message) {
+    toastStore.info('No message is available in this position')
+    return
+  }
+
   const timeStr = formatTimestampForScreenReader(message.created_at)
   const announcement = `${message.content}; sent ${timeStr}`
-  
+
   toastStore.info(announcement)
   
   // Also speak if TTS is enabled
@@ -608,7 +613,10 @@ onMounted(async () => {
   
   // 5. Auto-select first channel if none selected and we have channels
   if (!appStore.currentChannelId && appStore.channels.length > 0) {
-    await selectChannel(appStore.channels[0].id)
+    const firstChannel = appStore.channels[0]
+    if (firstChannel) {
+      await selectChannel(firstChannel.id)
+    }
   }
   
   // 6. Auto-focus message input on page load

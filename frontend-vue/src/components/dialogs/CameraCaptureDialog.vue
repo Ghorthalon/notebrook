@@ -207,8 +207,8 @@ const switchCamera = async () => {
   
   // Determine if this is likely a front camera
   const currentCamera = availableCameras.value[currentCameraIndex.value]
-  isFrontCamera.value = currentCamera.label.toLowerCase().includes('front') ||
-                       currentCamera.label.toLowerCase().includes('user')
+  isFrontCamera.value = currentCamera?.label.toLowerCase().includes('front') ||
+                       currentCamera?.label.toLowerCase().includes('user') || false
   
   try {
     await startCamera()

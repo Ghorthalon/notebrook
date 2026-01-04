@@ -1,0 +1,13 @@
+0 verbose cli /usr/bin/node /usr/bin/npm
+1 info using npm@11.6.2
+2 info using node@v25.2.0
+3 silly config load:file:/usr/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/notebrook/frontend-vue/.npmrc
+5 silly config load:file:/home/notebrook/.npmrc
+6 silly config load:file:/usr/etc/npmrc
+7 verbose title npm run dev --host
+8 verbose argv "run" "dev" "--" "--host"
+9 verbose logfile logs-max:10 dir:/home/notebrook/.npm/_logs/2025-12-02T18_08_09_048Z-
+10 verbose logfile /home/notebrook/.npm/_logs/2025-12-02T18_08_09_048Z-debug-0.log
+11 silly logfile start cleaning logs, removing 2 files
+12 silly logfile done cleaning log files

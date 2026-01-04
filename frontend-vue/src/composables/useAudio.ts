@@ -174,14 +174,20 @@ export function useAudio() {
     console.log(`playWater called - global: ${globalWaterSounds.length}, reactive: ${waterSounds.value.length} water sounds available`)
     if (globalWaterSounds.length > 0) {
       const randomIndex = Math.floor(Math.random() * globalWaterSounds.length)
-      await playSoundBuffer(globalWaterSounds[randomIndex])
+      const buffer = globalWaterSounds[randomIndex]
+      if (buffer) {
+        await playSoundBuffer(buffer)
+      }
     } else {
       console.warn('Water sounds not loaded - trying to load them now')
       if (globalAudioContext) {
         await loadAllSounds()
         if (globalWaterSounds.length > 0) {
           const randomIndex = Math.floor(Math.random() * globalWaterSounds.length)
-          await playSoundBuffer(globalWaterSounds[randomIndex])
+          const buffer = globalWaterSounds[randomIndex]
+          if (buffer) {
+            await playSoundBuffer(buffer)
+          }
         }
       }
     }
@@ -190,7 +196,10 @@ export function useAudio() {
   const playSent = async () => {
     if (globalSentSounds.length > 0) {
       const randomIndex = Math.floor(Math.random() * globalSentSounds.length)
-      await playSoundBuffer(globalSentSounds[randomIndex])
+      const buffer = globalSentSounds[randomIndex]
+      if (buffer) {
+        await playSoundBuffer(buffer)
+      }
     } else {
       console.warn('Sent sounds not loaded')
     }
@@ -303,7 +312,7 @@ export function useAudio() {
     // Select default voice (prefer English voices)
     if (!selectedVoice.value && voices.length > 0) {
       const englishVoice = voices.find(voice => voice.lang.startsWith('en'))
-      selectedVoice.value = englishVoice || voices[0]
+      selectedVoice.value = englishVoice || voices[0] || null
     }
   }
 
