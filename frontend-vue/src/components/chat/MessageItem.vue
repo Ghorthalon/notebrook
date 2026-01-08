@@ -313,14 +313,22 @@ const handleFocus = () => {
 
 const toggleAriaLabel = computed(() => {
   if (isChecked.value === true) return 'Mark as unchecked'
-  if (isChecked.value === false) return 'Mark as checked'
+  if (isChecked.value === false) return 'Remove check'
   return 'Mark as checked'
 })
 
 const toggleChecked = async () => {
   if (props.isUnsent) return
   const msg = props.message as ExtendedMessage
-  const next = isChecked.value !== true
+  // Cycle: null → true → false → null
+  let next: boolean | null
+  if (isChecked.value === null) {
+    next = true
+  } else if (isChecked.value === true) {
+    next = false
+  } else {
+    next = null
+  }
   const prev = isChecked.value
   try {
     // optimistic

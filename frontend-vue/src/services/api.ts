@@ -167,6 +167,55 @@ class ApiService {
   getFileUrl(filePath: string): string {
     return `${this.baseUrl}/uploads/${filePath.replace(/^.*\/uploads\//, '')}`
   }
+
+  // Backup - returns a download URL
+  async downloadBackup(): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/backup`, {
+      headers: { Authorization: this.token }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Backup failed: ${response.status} ${response.statusText}`)
+    }
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition')
+    let filename = 'notebrook-backup.db'
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+?)"?(?:;|$)/)
+      if (match && match[1]) filename = match[1]
+    }
+
+    // Download the file
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  }
+
+  // Restore - upload a .db file
+  async restoreBackup(file: File): Promise<{ success: boolean; message: string; stats: { channels: number; messages: number; files: number } }> {
+    const formData = new FormData()
+    formData.append('database', file)
+
+    const response = await fetch(`${this.baseUrl}/backup`, {
+      method: 'POST',
+      headers: { Authorization: this.token },
+      body: formData
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+      throw new Error(error.error || `Restore failed: ${response.status} ${response.statusText}`)
+    }
+
+    return response.json()
+  }
 }
 
 export const apiService = new ApiService()

@@ -43,10 +43,9 @@ const getOrCreateCertificate = async () => {
 }
 
 const createSelfSignedSSLCert = async () => {
-  const selfsigned = await import('selfsigned');
-  const pems = selfsigned.generate([{ name: 'Notebrook Self Signed Auto Generated Key', value: 'localhost' }], {
+  const pems = await selfSigned.generate([{ name: 'commonName', value: 'localhost' }], {
     keySize: 2048,
-    days: 365
+    algorithm: 'sha256'
   });
   return {
     key: pems.private,

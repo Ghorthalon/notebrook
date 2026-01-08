@@ -230,7 +230,7 @@ let animationInterval: number | null = null
 
 const startWaveAnimation = () => {
   waveAnimation.value = Array.from({ length: 20 }, () => Math.random() * 40 + 10)
-  animationInterval = setInterval(() => {
+  animationInterval = window.setInterval(() => {
     waveAnimation.value = waveAnimation.value.map(() => Math.random() * 40 + 10)
   }, 150)
 }

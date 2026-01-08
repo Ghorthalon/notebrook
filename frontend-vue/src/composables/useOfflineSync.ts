@@ -119,7 +119,7 @@ export function useOfflineSync() {
   const startAutoSave = () => {
     if (syncInterval) clearInterval(syncInterval)
     
-    syncInterval = setInterval(async () => {
+    syncInterval = window.setInterval(async () => {
       try {
         await appStore.saveState()
         

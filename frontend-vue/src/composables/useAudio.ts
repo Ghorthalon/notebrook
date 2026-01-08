@@ -248,7 +248,7 @@ export function useAudio() {
       recordingStartTime = Date.now()
 
       // Update duration every 100ms
-      recordingInterval = setInterval(() => {
+      recordingInterval = window.setInterval(() => {
         recording.value.duration = (Date.now() - recordingStartTime) / 1000
       }, 100)
 

@@ -145,17 +145,80 @@
           </select>
         </div>
       </div>
-      
+
+      <div class="setting-group">
+        <h3>Data Backup</h3>
+
+        <p class="setting-description">
+          Download a complete backup of all channels, messages, and data. Restore will replace all existing data.
+        </p>
+
+        <div class="setting-actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="handleBackup"
+            :loading="isBackingUp"
+          >
+            Download Backup
+          </BaseButton>
+
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="triggerRestoreInput"
+            :disabled="isRestoring"
+          >
+            Restore from Backup
+          </BaseButton>
+          <input
+            ref="restoreInput"
+            type="file"
+            accept=".db,.sqlite,.sqlite3"
+            style="display: none"
+            @change="handleRestoreFileSelect"
+          />
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h3>Export Data</h3>
+
+        <p class="setting-description">
+          Export all channels and messages in various formats.
+        </p>
+
+        <div class="setting-item">
+          <label for="export-format">Format</label>
+          <select id="export-format" v-model="exportFormat" class="select">
+            <option value="markdown">Markdown (zipped)</option>
+            <option value="html-single">HTML (single file)</option>
+            <option value="html-individual">HTML (individual files, zipped)</option>
+          </select>
+        </div>
+
+        <div class="setting-actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="handleExport"
+            :loading="isExporting"
+          >
+            Export
+          </BaseButton>
+        </div>
+      </div>
+
       <div class="setting-group">
         <h3>Account</h3>
-        
+
         <div class="setting-item">
           <label>Current Server</label>
           <div class="server-info">
             {{ currentServerUrl || 'Default' }}
           </div>
         </div>
-        
+
         <div class="setting-actions">
           <BaseButton
             type="button"
@@ -165,7 +228,7 @@
           >
             Logout
           </BaseButton>
-          
+
           <BaseButton
             type="button"
             variant="danger"
@@ -176,7 +239,7 @@
           </BaseButton>
         </div>
       </div>
-      
+
       <div class="form-actions">
         <BaseButton
           type="button"
@@ -218,6 +281,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Restore Confirmation Dialog -->
+    <div v-if="showRestoreConfirm" class="confirm-overlay">
+      <div class="confirm-dialog">
+        <h3>Restore from Backup</h3>
+        <p>This will replace all existing data with the backup. All current channels, messages, and data will be overwritten. This cannot be undone.</p>
+        <p v-if="pendingRestoreFile" class="file-info">
+          File: {{ pendingRestoreFile.name }}
+        </p>
+        <div class="confirm-actions">
+          <BaseButton
+            type="button"
+            variant="secondary"
+            @click="cancelRestore"
+          >
+            Cancel
+          </BaseButton>
+          <BaseButton
+            type="button"
+            variant="danger"
+            @click="handleRestore"
+            :loading="isRestoring"
+          >
+            Restore Backup
+          </BaseButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -228,6 +319,8 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useAudio } from '@/composables/useAudio'
+import { apiService } from '@/services/api'
+import { getExporter, downloadBlob, type ExportFormat } from '@/utils/export'
 import { clear } from 'idb-keyval'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { AppSettings } from '@/types'
@@ -244,9 +337,16 @@ const { availableVoices, speak, setVoice } = useAudio()
 
 const isSaving = ref(false)
 const isResetting = ref(false)
+const isBackingUp = ref(false)
+const isRestoring = ref(false)
+const isExporting = ref(false)
+const exportFormat = ref<ExportFormat>('markdown')
 const showResetConfirm = ref(false)
+const showRestoreConfirm = ref(false)
+const pendingRestoreFile = ref<File | null>(null)
 const selectedVoiceURI = ref('')
 const soundInput = ref()
+const restoreInput = ref<HTMLInputElement>()
 
 // Computed property for current server URL
 const currentServerUrl = computed(() => authStore.serverUrl)
@@ -311,19 +411,19 @@ const handleLogout = async () => {
 
 const handleResetData = async () => {
   isResetting.value = true
-  
+
   try {
     // Clear all IndexedDB data
     await clear()
-    
+
     // Clear stores
     await authStore.clearAuth()
     appStore.$reset()
-    
+
     toastStore.success('All data has been reset')
     showResetConfirm.value = false
     emit('close')
-    
+
     // Redirect to auth page
     router.push('/auth')
   } catch (error) {
@@ -331,6 +431,85 @@ const handleResetData = async () => {
     toastStore.error('Failed to reset data')
   } finally {
     isResetting.value = false
+  }
+}
+
+const handleBackup = async () => {
+  isBackingUp.value = true
+
+  try {
+    await apiService.downloadBackup()
+    toastStore.success('Backup downloaded successfully')
+  } catch (error) {
+    console.error('Backup failed:', error)
+    toastStore.error('Failed to download backup')
+  } finally {
+    isBackingUp.value = false
+  }
+}
+
+const triggerRestoreInput = () => {
+  restoreInput.value?.click()
+}
+
+const handleRestoreFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (file) {
+    pendingRestoreFile.value = file
+    showRestoreConfirm.value = true
+  }
+
+  // Reset input so the same file can be selected again
+  input.value = ''
+}
+
+const handleRestore = async () => {
+  if (!pendingRestoreFile.value) return
+
+  isRestoring.value = true
+
+  try {
+    const result = await apiService.restoreBackup(pendingRestoreFile.value)
+    toastStore.success(`Restored ${result.stats.channels} channels, ${result.stats.messages} messages`)
+
+    // Clear local cache and reload data
+    await clear()
+    appStore.$reset()
+
+    showRestoreConfirm.value = false
+    pendingRestoreFile.value = null
+    emit('close')
+
+    // Reload the page to refresh all data
+    window.location.reload()
+  } catch (error) {
+    console.error('Restore failed:', error)
+    toastStore.error((error as Error).message || 'Failed to restore backup')
+  } finally {
+    isRestoring.value = false
+  }
+}
+
+const cancelRestore = () => {
+  showRestoreConfirm.value = false
+  pendingRestoreFile.value = null
+}
+
+const handleExport = async () => {
+  isExporting.value = true
+
+  try {
+    const exporter = getExporter(exportFormat.value)
+    const blob = await exporter.export(appStore.channels, appStore.messages)
+    downloadBlob(blob, exporter.filename)
+    toastStore.success('Export completed')
+  } catch (error) {
+    console.error('Export failed:', error)
+    toastStore.error('Export failed')
+  } finally {
+    isExporting.value = false
   }
 }
 
@@ -380,6 +559,22 @@ onMounted(() => {
 .setting-item label {
   font-weight: 500;
   color: #374151;
+}
+
+.setting-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.file-info {
+  font-family: monospace;
+  font-size: 0.875rem;
+  background: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 4px;
+  word-break: break-all;
 }
 
 .checkbox {
@@ -542,6 +737,15 @@ onMounted(() => {
   
   .confirm-dialog p {
     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .setting-description {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .file-info {
+    background: #374151;
+    color: rgba(255, 255, 255, 0.87);
   }
 }
 </style>
