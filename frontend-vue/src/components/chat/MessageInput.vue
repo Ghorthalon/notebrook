@@ -18,6 +18,7 @@
         @camera="$emit('camera')"
         @voice="$emit('voice')"
         @toggle-check="$emit('toggle-check')"
+        @open-url="$emit('open-url')"
         @send="handleSubmit"
       />
     </div>
@@ -37,6 +38,7 @@ const emit = defineEmits<{
   'camera': []
   'voice': []
   'toggle-check': []
+  'open-url': []
 }>()
 
 const appStore = useAppStore()

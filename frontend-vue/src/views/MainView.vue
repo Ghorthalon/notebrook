@@ -56,6 +56,7 @@
           ref="messagesContainer"
           @open-message-dialog="handleOpenMessageDialog"
           @open-message-dialog-edit="handleOpenMessageDialogEdit"
+          @open-links="handleOpenLinks"
         />
         
         <!-- Message Input -->
@@ -65,6 +66,7 @@
           @camera="showCameraDialog = true"
           @voice="showVoiceDialog = true"
           @toggle-check="handleToggleCheckFocused"
+          @open-url="handleOpenUrlFocused"
           ref="messageInput"
         />
       </div>
@@ -134,6 +136,13 @@
         @move="handleMoveMessage"
       />
     </BaseDialog>
+
+    <BaseDialog v-model:show="showLinkDialog" title="Open Link">
+      <LinkSelectionDialog
+        :links="selectedLinks"
+        @close="showLinkDialog = false"
+      />
+    </BaseDialog>
   </div>
 </template>
 
@@ -166,6 +175,7 @@ import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue'
 import CameraCaptureDialog from '@/components/dialogs/CameraCaptureDialog.vue'
 import ChannelInfoDialog from '@/components/dialogs/ChannelInfoDialog.vue'
 import MessageDialog from '@/components/dialogs/MessageDialog.vue'
+import LinkSelectionDialog from '@/components/dialogs/LinkSelectionDialog.vue'
 
 // Types
 import type { ExtendedMessage, UnsentMessage, Channel } from '@/types'
@@ -198,8 +208,10 @@ const showFileDialog = ref(false)
 const showVoiceDialog = ref(false)
 const showMessageDialog = ref(false)
 const showCameraDialog = ref(false)
+const showLinkDialog = ref(false)
 const selectedMessage = ref<ExtendedMessage | null>(null)
 const shouldStartEditing = ref(false)
+const selectedLinks = ref<string[]>([])
 
 // Mobile sidebar state
 const sidebarOpen = ref(false)
@@ -342,6 +354,38 @@ const handleToggleCheckFocused = async () => {
     toastStore.info(next ? 'Marked as checked' : 'Marked as unchecked')
   } catch (e) {
     toastStore.error('Failed to toggle check')
+  }
+}
+
+// Handle opening links from a message (when multiple links found)
+const handleOpenLinks = (links: string[], message: ExtendedMessage | UnsentMessage) => {
+  selectedLinks.value = links
+  showLinkDialog.value = true
+}
+
+// Handle open URL button press (mobile) - triggers URL opening for focused message
+const handleOpenUrlFocused = () => {
+  const result = messagesContainer.value?.handleOpenUrlFocused?.()
+  if (!result || !result.message) {
+    toastStore.info('No message is focused')
+    return
+  }
+
+  if (result.action === 'none') {
+    // No links found, fall back to edit mode
+    if ('created_at' in result.message) {
+      handleOpenMessageDialogEdit(result.message)
+    } else {
+      toastStore.info('No links found in this message')
+    }
+  } else if (result.action === 'single') {
+    // Single link, open directly
+    window.open(result.urls[0], '_blank', 'noopener,noreferrer')
+    toastStore.success('Opening link')
+  } else if (result.action === 'multiple') {
+    // Multiple links, show selection dialog
+    selectedLinks.value = result.urls
+    showLinkDialog.value = true
   }
 }
 

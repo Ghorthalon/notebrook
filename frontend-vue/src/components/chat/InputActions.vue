@@ -39,7 +39,18 @@
     >
       ✓
     </BaseButton>
-    
+
+    <BaseButton
+      variant="ghost"
+      size="xs"
+      class="open-url-button"
+      @click="$emit('open-url')"
+      aria-label="Open URL in focused message"
+      :disabled="disabled"
+    >
+      URL
+    </BaseButton>
+
     <BaseButton
       variant="primary"
       size="sm"
@@ -70,6 +81,7 @@ defineEmits<{
   'camera': []
   'voice': []
   'toggle-check': []
+  'open-url': []
   'send': []
 }>()
 </script>
@@ -82,9 +94,11 @@ defineEmits<{
   flex-shrink: 0;
 }
 
-/* Mobile-only for the checked toggle button */
-.input-actions [aria-label="Toggle check on focused message"] { display: none; }
+/* Mobile-only for the checked toggle button and open URL button */
+.input-actions [aria-label="Toggle check on focused message"],
+.input-actions .open-url-button { display: none; }
 @media (max-width: 480px) {
-  .input-actions [aria-label="Toggle check on focused message"] { display: inline-flex; }
+  .input-actions [aria-label="Toggle check on focused message"],
+  .input-actions .open-url-button { display: inline-flex; }
 }
 </style>

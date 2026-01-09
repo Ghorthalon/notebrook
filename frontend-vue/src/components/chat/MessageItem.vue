@@ -67,6 +67,7 @@ interface Props {
 const emit = defineEmits<{
   'open-dialog': [message: ExtendedMessage | UnsentMessage]
   'open-dialog-edit': [message: ExtendedMessage | UnsentMessage]
+  'open-links': [links: string[], message: ExtendedMessage | UnsentMessage]
   'focus': []
 }>()
 
@@ -195,7 +196,42 @@ const handleClick = () => {
   }
 }
 
+// Extract URLs from text content
+const extractUrls = (text: string): string[] => {
+  const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi
+  const matches = text.match(urlRegex) || []
+  // Remove duplicates
+  return [...new Set(matches)]
+}
+
+// Handle Shift+Enter: open URL(s) or fall back to edit
+const handleOpenUrl = () => {
+  if (props.isUnsent) return
+
+  const urls = extractUrls(props.message.content)
+
+  if (urls.length === 0) {
+    // No links found, fall back to edit
+    emit('open-dialog-edit', props.message)
+  } else if (urls.length === 1) {
+    // Single link, open directly
+    window.open(urls[0], '_blank', 'noopener,noreferrer')
+    toastStore.success('Opening link')
+  } else {
+    // Multiple links, emit event for selection dialog
+    emit('open-links', urls, props.message)
+  }
+}
+
 const handleKeydown = (event: KeyboardEvent) => {
+  // Handle Shift+Enter for opening URLs
+  if (event.shiftKey && event.key === 'Enter') {
+    event.preventDefault()
+    event.stopPropagation()
+    handleOpenUrl()
+    return
+  }
+
   // Don't interfere with normal keyboard shortcuts (Ctrl+C, Ctrl+V, etc.)
   if (event.ctrlKey || event.metaKey || event.altKey) {
     return
@@ -206,7 +242,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     toggleChecked()
     return
   }
-  
+
   if (event.key === 'c') {
     // Copy message content (only when no modifiers are pressed)
     navigator.clipboard.writeText(props.message.content)
@@ -341,6 +377,11 @@ const toggleChecked = async () => {
   }
 }
 
+// Expose methods for external use (e.g., mobile button)
+defineExpose({
+  handleOpenUrl,
+  extractUrls
+})
 </script>
 
 <style scoped>

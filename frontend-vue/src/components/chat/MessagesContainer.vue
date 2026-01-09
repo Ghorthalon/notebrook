@@ -8,7 +8,8 @@
         :aria-selected="index === focusedMessageIndex ? 'true' : 'false'"
         @focus="focusedMessageIndex = index"
         @open-dialog="emit('open-message-dialog', $event)"
-        @open-dialog-edit="emit('open-message-dialog-edit', $event)" />
+        @open-dialog-edit="emit('open-message-dialog-edit', $event)"
+        @open-links="(links, msg) => emit('open-links', links, msg)" />
 
       <!-- Unsent Messages -->
       <MessageItem v-for="(unsentMsg, index) in unsentMessages" :key="unsentMsg.id" :message="unsentMsg"
@@ -16,7 +17,8 @@
         :aria-selected="(messages.length + index) === focusedMessageIndex ? 'true' : 'false'"
         :data-message-index="messages.length + index" @focus="focusedMessageIndex = messages.length + index"
         @open-dialog="emit('open-message-dialog', $event)"
-        @open-dialog-edit="emit('open-message-dialog-edit', $event)" />
+        @open-dialog-edit="emit('open-message-dialog-edit', $event)"
+        @open-links="(links, msg) => emit('open-links', links, msg)" />
     </div>
   </div>
 </template>
@@ -35,6 +37,7 @@ const emit = defineEmits<{
   'message-selected': [message: ExtendedMessage | UnsentMessage, index: number]
   'open-message-dialog': [message: ExtendedMessage | UnsentMessage]
   'open-message-dialog-edit': [message: ExtendedMessage | UnsentMessage]
+  'open-links': [links: string[], message: ExtendedMessage | UnsentMessage]
 }>()
 
 const props = defineProps<Props>()
@@ -246,10 +249,42 @@ const getFocusedMessage = (): ExtendedMessage | UnsentMessage | null => {
   return null
 }
 
+// Extract URLs from text content
+const extractUrls = (text: string): string[] => {
+  const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi
+  const matches = text.match(urlRegex) || []
+  return [...new Set(matches)]
+}
+
+// Handle open URL for the focused message (for mobile button)
+const handleOpenUrlFocused = (): { action: 'none' | 'single' | 'multiple', urls: string[], message: ExtendedMessage | UnsentMessage | null } => {
+  const message = getFocusedMessage()
+  if (!message) {
+    return { action: 'none', urls: [], message: null }
+  }
+
+  // Don't allow URL opening for unsent messages
+  if ('channelId' in message) {
+    return { action: 'none', urls: [], message }
+  }
+
+  const urls = extractUrls(message.content)
+
+  if (urls.length === 0) {
+    return { action: 'none', urls: [], message }
+  } else if (urls.length === 1) {
+    return { action: 'single', urls, message }
+  } else {
+    return { action: 'multiple', urls, message }
+  }
+}
+
 defineExpose({
   scrollToBottom,
   focusMessageById,
-  getFocusedMessage
+  getFocusedMessage,
+  handleOpenUrlFocused,
+  extractUrls
 })
 </script>
 
