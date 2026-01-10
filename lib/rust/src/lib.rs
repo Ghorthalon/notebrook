@@ -41,6 +41,11 @@ struct SendMessagePayload {
     content: String,
 }
 
+#[derive(Debug, Serialize)]
+struct CreateChannelPayload {
+    name: String,
+}
+
 pub struct ChannelClient {
     url: String,
     client: Client,
@@ -87,6 +92,22 @@ impl ChannelClient {
         Ok(channels.into_iter().find(|c| c.name == name))
     }
 
+    /// Create a new channel
+    pub fn create_channel(&self, name: &str) -> Result<Channel, ChannelError> {
+        let payload = CreateChannelPayload {
+            name: name.to_string(),
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/channels/", self.url))
+            .json(&payload)
+            .send()?
+            .error_for_status()?;
+
+        Ok(response.json()?)
+    }
+
     /// Read messages from a channel by name
     pub fn read_messages(
         &self,
@@ -107,11 +128,16 @@ impl ChannelClient {
         Ok(response.json()?)
     }
 
-    /// Send a message to a channel by name
+    /// Send a message to a channel by name, creating the channel if it doesn't exist
     pub fn send_message(&self, channel_name: &str, content: &str) -> Result<Message, ChannelError> {
-        let channel_id = self
-            .find_channel_id_by_name(channel_name)?
-            .ok_or_else(|| ChannelError::ChannelNotFound(channel_name.to_string()))?;
+        let channel_id = match self.find_channel_id_by_name(channel_name)? {
+            Some(id) => id,
+            None => {
+                // Channel doesn't exist, create it
+                let channel = self.create_channel(channel_name)?;
+                channel.id
+            }
+        };
 
         let payload = SendMessagePayload {
             content: content.to_string(),
@@ -141,6 +167,11 @@ pub fn list_channels(url: &str, token: &str) -> Result<Vec<Channel>, ChannelErro
 /// Read channel details by name
 pub fn read_channel(url: &str, token: &str, name: &str) -> Result<Option<Channel>, ChannelError> {
     create_client(url, token)?.read_channel(name)
+}
+
+/// Create a new channel
+pub fn create_channel(url: &str, token: &str, name: &str) -> Result<Channel, ChannelError> {
+    create_client(url, token)?.create_channel(name)
 }
 
 /// Read messages from a channel by name
