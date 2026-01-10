@@ -2,7 +2,7 @@
 //! Provides functions to list channels, read messages, and send messages by channel name
 
 use reqwest::blocking::Client;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -55,7 +55,7 @@ impl ChannelClient {
     pub fn new(url: &str, token: &str) -> Result<Self, ChannelError> {
         let mut headers = HeaderMap::new();
         headers.insert(
-            AUTHORIZATION,
+            HeaderName::from_static("authorization"),
             HeaderValue::from_str(&format!("Bearer {}", token))
                 .map_err(|_| ChannelError::InvalidHeader)?,
         );
