@@ -1,4 +1,12 @@
-const audioContext = new AudioContext();
+let audioContext: AudioContext | null = null;
+let soundsLoaded = false;
+
+function getAudioContext(): AudioContext {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContext;
+}
 
 const soundFiles = {
     intro: 'intro.wav',
@@ -17,7 +25,7 @@ const sentSounds: AudioBuffer[] = [];
 async function loadSound(url: string): Promise<AudioBuffer> {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    return await audioContext.decodeAudioData(arrayBuffer);
+    return await getAudioContext().decodeAudioData(arrayBuffer);
 }
 
 async function loadAllSounds() {
@@ -37,45 +45,44 @@ async function loadAllSounds() {
     }
 }
 
-function playSoundBuffer(buffer: AudioBuffer) {
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
+async function ensureSoundsLoaded() {
+    if (!soundsLoaded) {
+        soundsLoaded = true;
+        await loadAllSounds();
     }
-    const source = audioContext.createBufferSource();
+}
+
+async function playSoundBuffer(buffer: AudioBuffer) {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+        await ctx.resume();
+    }
+    const source = ctx.createBufferSource();
     source.buffer = buffer;
-    source.connect(audioContext.destination);
+    source.connect(ctx.destination);
     source.start(0);
 }
 
-export function playSound(name: SoundName) {
+export async function playSound(name: SoundName) {
+    await ensureSoundsLoaded();
     const buffer = sounds[name];
     if (buffer) {
-        playSoundBuffer(buffer);
-    } else {
-        console.error(`Sound ${name} not loaded.`);
+        await playSoundBuffer(buffer);
     }
 }
 
-export function playWater() {
+export async function playWater() {
+    await ensureSoundsLoaded();
     if (waterSounds.length > 0) {
         const sound = waterSounds[Math.floor(Math.random() * waterSounds.length)];
-        playSoundBuffer(sound);
-    } else {
-        console.error("Water sounds not loaded.");
+        await playSoundBuffer(sound);
     }
 }
 
-export function playSent() {
+export async function playSent() {
+    await ensureSoundsLoaded();
     if (sentSounds.length > 0) {
         const sound = sentSounds[Math.floor(Math.random() * sentSounds.length)];
-        playSoundBuffer(sound);
-    } else {
-        console.error("Sent sounds not loaded.");
+        await playSoundBuffer(sound);
     }
 }
-
-loadAllSounds().then(() => {
-    console.log('All sounds loaded and ready to play');
-}).catch(error => {
-    console.error('Error loading sounds:', error);
-});
