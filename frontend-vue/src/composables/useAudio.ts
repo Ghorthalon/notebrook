@@ -54,12 +54,26 @@ export function useAudio() {
       globalAudioContext = new AudioContext()
       audioContext.value = globalAudioContext
     }
-    
+
     if (globalAudioContext.state === 'suspended') {
       try {
         await globalAudioContext.resume()
       } catch (error) {
         console.warn('AudioContext resume failed, user interaction required:', error)
+      }
+    }
+
+    // Play a silent buffer to truly unlock AudioContext on iOS PWA
+    // On iOS, resume() alone is insufficient — audio must be routed through the context during a user gesture
+    if (globalAudioContext.state === 'running') {
+      try {
+        const silentBuffer = globalAudioContext.createBuffer(1, 1, 22050)
+        const source = globalAudioContext.createBufferSource()
+        source.buffer = silentBuffer
+        source.connect(globalAudioContext.destination)
+        source.start(0)
+      } catch (error) {
+        console.warn('Silent buffer unlock failed:', error)
       }
     }
   }
@@ -94,8 +108,7 @@ export function useAudio() {
     
     try {
       console.log('Starting to load all sounds...')
-      soundsLoaded = true
-      
+
       // Load basic sounds
       const basicSounds = {
         intro: '/sounds/intro.wav',
@@ -135,22 +148,30 @@ export function useAudio() {
         }
       }
 
+      soundsLoaded = true
       console.log('All sounds loaded and ready to play')
     } catch (error) {
       console.error('Error loading sounds:', error)
+      // Don't set soundsLoaded so a retry can happen on next play attempt
     }
   }
 
   // Play a sound buffer
   const playSoundBuffer = async (buffer: AudioBuffer) => {
     if (!appStore.settings.soundEnabled) return
-    
+
     try {
       await initAudioContext()
       if (!globalAudioContext) {
         console.error('AudioContext not initialized')
         return
       }
+
+      // If AudioContext exists but sounds never loaded successfully, retry
+      if (!soundsLoaded) {
+        await loadAllSounds()
+      }
+
       const source = globalAudioContext.createBufferSource()
       source.buffer = buffer
       source.connect(globalAudioContext.destination)
@@ -411,17 +432,22 @@ export function useAudio() {
       audioSystemInitialized = true
       
       // Set up user gesture listeners to initialize audio and load sounds
+      // Include touchstart for iOS PWA standalone mode where it fires before click
+      const gestureEvents = ['click', 'keydown', 'touchstart'] as const
       const initializeAudio = async () => {
+        // Remove all gesture listeners immediately so this only fires once
+        for (const event of gestureEvents) {
+          document.removeEventListener(event, initializeAudio)
+        }
         console.log('User interaction detected, initializing audio system...')
         await initAudioOnUserGesture()
         await loadAllSounds() // Load sounds after user interaction
         console.log('Audio system initialized')
-        document.removeEventListener('click', initializeAudio)
-        document.removeEventListener('keydown', initializeAudio)
       }
-      
-      document.addEventListener('click', initializeAudio, { once: true })
-      document.addEventListener('keydown', initializeAudio, { once: true })
+
+      for (const event of gestureEvents) {
+        document.addEventListener(event, initializeAudio)
+      }
       
       // Initialize voices for speech synthesis
       if ('speechSynthesis' in window) {
