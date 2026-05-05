@@ -4,6 +4,7 @@ import { logger } from './globals';
 import { readdir, readFile } from "fs/promises";
 import { existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
+import { dedupeMessages } from './jobs/dedupe-messages';
 
 export let FTS5Enabled = true;
 
@@ -77,4 +78,4 @@ export const db = new Database(DB_PATH);
 
 
 initializeDB();
-migrate();
+migrate().then(() => dedupeMessages());

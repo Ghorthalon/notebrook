@@ -14,24 +14,65 @@ pub enum ChannelError {
     ChannelNotFound(String),
     #[error("Invalid header value")]
     InvalidHeader,
+    #[error("Payload too large")]
+    PayloadTooLarge,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Channel {
-    pub id: String,
+    pub id: i64,
     pub name: String,
     #[serde(flatten)]
     pub extra: serde_json::Value,
 }
 
+#[derive(Debug, Deserialize)]
+struct ChannelsResponse {
+    channels: Vec<Channel>,
+}
+
+fn deserialize_string_or_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+    use std::fmt;
+
+    struct StringOrI64Visitor;
+
+    impl<'de> Visitor<'de> for StringOrI64Visitor {
+        type Value = i64;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a string or i64")
+        }
+
+        fn visit_i64<E>(self, v: i64) -> Result<i64, E> {
+            Ok(v)
+        }
+
+        fn visit_u64<E>(self, v: u64) -> Result<i64, E> {
+            Ok(v as i64)
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<i64, E>
+        where
+            E: de::Error,
+        {
+            v.parse().map_err(de::Error::custom)
+        }
+    }
+
+    deserializer.deserialize_any(StringOrI64Visitor)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub id: String,
+    #[serde(deserialize_with = "deserialize_string_or_i64")]
+    pub id: i64,
     pub content: String,
-    #[serde(alias = "channelId", alias = "channel_id")]
-    pub channel_id: String,
-    pub timestamp: Option<String>,
-    pub author: Option<String>,
+    #[serde(alias = "channelId", alias = "channel_id", deserialize_with = "deserialize_string_or_i64")]
+    pub channel_id: i64,
     #[serde(flatten)]
     pub extra: serde_json::Value,
 }
@@ -56,8 +97,7 @@ impl ChannelClient {
         let mut headers = HeaderMap::new();
         headers.insert(
             HeaderName::from_static("authorization"),
-            HeaderValue::from_str(&format!("Bearer {}", token))
-                .map_err(|_| ChannelError::InvalidHeader)?,
+            HeaderValue::from_str(token).map_err(|_| ChannelError::InvalidHeader)?,
         );
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
@@ -77,11 +117,12 @@ impl ChannelClient {
             .send()?
             .error_for_status()?;
 
-        Ok(response.json()?)
+        let wrapper: ChannelsResponse = response.json()?;
+        Ok(wrapper.channels)
     }
 
     /// Find a channel ID by its name
-    pub fn find_channel_id_by_name(&self, name: &str) -> Result<Option<String>, ChannelError> {
+    pub fn find_channel_id_by_name(&self, name: &str) -> Result<Option<i64>, ChannelError> {
         let channels = self.list_channels()?;
         Ok(channels.into_iter().find(|c| c.name == name).map(|c| c.id))
     }
@@ -147,9 +188,14 @@ impl ChannelClient {
             .client
             .post(format!("{}/channels/{}/messages", self.url, channel_id))
             .json(&payload)
-            .send()?
-            .error_for_status()?;
+            .send()?;
 
+        // Check for 413 Payload Too Large specifically
+        if response.status() == reqwest::StatusCode::PAYLOAD_TOO_LARGE {
+            return Err(ChannelError::PayloadTooLarge);
+        }
+
+        let response = response.error_for_status()?;
         Ok(response.json()?)
     }
 }

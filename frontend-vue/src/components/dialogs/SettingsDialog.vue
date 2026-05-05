@@ -320,6 +320,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useAudio } from '@/composables/useAudio'
 import { apiService } from '@/services/api'
+import { syncService } from '@/services/sync'
 import { getExporter, downloadBlob, type ExportFormat } from '@/utils/export'
 import { clear } from 'idb-keyval'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -501,6 +502,12 @@ const handleExport = async () => {
   isExporting.value = true
 
   try {
+    // Sync all channels before exporting to ensure we have all messages
+    toastStore.info('Syncing all channels...')
+    for (const channel of appStore.channels) {
+      await syncService.syncChannelMessages(channel.id)
+    }
+
     const exporter = getExporter(exportFormat.value)
     const blob = await exporter.export(appStore.channels, appStore.messages)
     downloadBlob(blob, exporter.filename)
